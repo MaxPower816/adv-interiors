@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100" role="img" aria-label="Интерьер-заглушка">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#756a61"/>
+      <stop offset="0.48" stop-color="#11100f"/>
+      <stop offset="1" stop-color="#060606"/>
+    </linearGradient>
+    <radialGradient id="light" cx="72%" cy="20%" r="42%">
+      <stop offset="0" stop-color="#e7d4be" stop-opacity=".46"/>
+      <stop offset="1" stop-color="#e7d4be" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="1100" fill="url(#bg)"/>
+  <rect width="1600" height="1100" fill="url(#light)"/>
+  <path d="M170 205h1260v610H170z" fill="#080706" opacity=".42"/>
+  <path d="M170 815h1260l-250 185H370z" fill="#85786f" opacity=".38"/>
+  <path d="M975 300h260v310H975z" fill="#e7e3e0" opacity=".16"/>
+  <path d="M430 650h510v115H430z" fill="#a69c96" opacity=".36"/>
+  <path d="M520 560h330v115H520z" fill="#8d8178" opacity=".6"/>
+  <path d="M930 660h210v80H930z" fill="#080706" opacity=".86"/>
+  <path d="M1110 505h25v255h-25z" fill="#b08b61" opacity=".56"/>
+  <circle cx="1122" cy="470" r="58" fill="#e7e3e0" opacity=".14"/>
+</svg>

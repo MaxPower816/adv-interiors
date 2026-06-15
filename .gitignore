@@ -1,0 +1,12 @@
+.next
+node_modules
+out
+dist
+.env.local
+.env*.local
+data/*.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+work/npm
+work/npm-cache

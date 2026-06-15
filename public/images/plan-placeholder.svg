@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="Планировка-заглушка">
+  <rect width="1200" height="900" fill="#080706"/>
+  <g fill="none" stroke="#e7e3e0" stroke-opacity=".42" stroke-width="8">
+    <path d="M160 120h880v660H160z"/>
+    <path d="M160 390h420V120M580 390h460M760 390v390M420 390v390"/>
+    <path d="M220 170h170M830 170h150M240 735h115"/>
+  </g>
+</svg>
