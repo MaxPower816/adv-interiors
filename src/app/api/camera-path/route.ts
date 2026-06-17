@@ -62,8 +62,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, errors: result.error.flatten() }, { status: 400 });
   }
 
-  const filePath = path.join(process.cwd(), "src/config/camera-path.ts");
-  await writeFile(filePath, serializeCameraPath(result.data.cameraPath), "utf8");
+  const source = serializeCameraPath(result.data.cameraPath);
 
-  return NextResponse.json({ ok: true });
+  if (process.env.VERCEL) {
+    return NextResponse.json({
+      ok: true,
+      persisted: false,
+      source,
+      message: "Vercel не может менять файлы проекта после деплоя. Код камеры подготовлен для копирования.",
+    });
+  }
+
+  const filePath = path.join(process.cwd(), "src/config/camera-path.ts");
+  await writeFile(filePath, source, "utf8");
+
+  return NextResponse.json({ ok: true, persisted: true, source });
 }

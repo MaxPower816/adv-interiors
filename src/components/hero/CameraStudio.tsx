@@ -214,7 +214,7 @@ export function CameraStudioPanel({
 
             <div className="flex items-start gap-2 text-xs leading-5 text-[#a69c96]">
               <SlidersHorizontal className="mt-0.5 h-4 w-4 shrink-0" />
-              <p>Левая кнопка мыши вращает, колесо приближает, правая кнопка или Shift двигает сцену. “Сохранить текущий вид” сразу берет положение камеры и записывает его в файл.</p>
+              <p>Левая кнопка мыши вращает, колесо приближает, правая кнопка или Shift двигает сцену. На Vercel сохранение остается в этом браузере и копирует код камеры для GitHub.</p>
             </div>
             {status ? <p className="text-xs text-[#cbc9c8]">{status}</p> : null}
           </div>
