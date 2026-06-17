@@ -1,6 +1,19 @@
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+function getSupabaseRestUrl(path: string) {
+  if (!SUPABASE_URL) {
+    throw new Error("Supabase URL is not configured.");
+  }
+
+  const baseUrl = SUPABASE_URL
+    .trim()
+    .replace(/\/rest\/v1\/?$/, "")
+    .replace(/\/$/, "");
+
+  return `${baseUrl}/rest/v1/${path}`;
+}
+
 export function hasSupabaseConfig() {
   return Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 }
@@ -10,7 +23,7 @@ export async function supabaseRequest<T>(path: string, init?: RequestInit) {
     throw new Error("Supabase environment variables are not configured.");
   }
 
-  const response = await fetch(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${path}`, {
+  const response = await fetch(getSupabaseRestUrl(path), {
     ...init,
     cache: "no-store",
     headers: {
