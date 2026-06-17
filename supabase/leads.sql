@@ -29,3 +29,17 @@ create index if not exists leads_created_at_idx on public.leads (created_at desc
 create index if not exists leads_status_idx on public.leads (status);
 
 alter table public.leads enable row level security;
+
+create table if not exists public.activity_events (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  name text not null,
+  path text not null,
+  referrer text,
+  payload jsonb
+);
+
+create index if not exists activity_events_created_at_idx on public.activity_events (created_at desc);
+create index if not exists activity_events_name_idx on public.activity_events (name);
+
+alter table public.activity_events enable row level security;

@@ -141,6 +141,10 @@ export async function createLead(input: CreateLeadInput) {
     return rowToLead(rows[0]);
   }
 
+  if (process.env.VERCEL) {
+    throw new Error("Supabase environment variables are not available in this Vercel deployment.");
+  }
+
   const leads = await readLeadsFile();
   const now = new Date().toISOString();
   const lead: Lead = {
@@ -166,6 +170,10 @@ export async function updateLead(id: string, patch: LeadPatch) {
     });
 
     return rows[0] ? rowToLead(rows[0]) : null;
+  }
+
+  if (process.env.VERCEL) {
+    throw new Error("Supabase environment variables are not available in this Vercel deployment.");
   }
 
   const leads = await readLeadsFile();
