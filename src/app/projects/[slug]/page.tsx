@@ -1,19 +1,50 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import { notFound } from "next/navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { ProjectGallery } from "@/components/portfolio/ProjectGallery";
+import { siteConfig } from "@/config/site";
 import { projects } from "@/content/projects";
 
 export function generateStaticParams() {
   return projects.map((project) => ({ slug: project.slug }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const project = projects.find((item) => item.slug === slug);
-  return { title: project ? `${project.title} — ADV INTERIORS` : "Проект" };
+
+  if (!project) {
+    return { title: "Проект" };
+  }
+
+  const title = `${project.title}: дизайн интерьера ${project.type.toLowerCase()} ${project.area}`;
+  const description = `${project.description} Проект ${project.type.toLowerCase()} ${project.area}, ${project.city}: ${project.works.join(", ")}.`;
+  const url = `${siteConfig.url}/projects/${project.slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: siteConfig.name,
+      type: "article",
+      locale: "ru_RU",
+      images: [{ url: project.cover, alt: project.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [project.cover],
+    },
+  };
 }
 
 export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -21,6 +52,21 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const project = projects.find((item) => item.slug === slug);
   if (!project) notFound();
   const nextProject = projects[(projects.indexOf(project) + 1) % projects.length];
+  const projectJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: project.title,
+    description: project.description,
+    url: `${siteConfig.url}/projects/${project.slug}`,
+    image: `${siteConfig.url}${project.cover}`,
+    creator: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+    about: `Дизайн интерьера: ${project.type}, ${project.area}, ${project.city}`,
+    keywords: project.works.join(", "),
+  };
 
   return (
     <>
@@ -67,6 +113,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         </section>
       </main>
       <Footer />
+      <Script id={`project-schema-${project.slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(projectJsonLd) }} />
     </>
   );
 }

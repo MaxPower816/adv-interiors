@@ -206,7 +206,7 @@ export function AdminCRM() {
           <button className="mt-5 min-h-11 w-full border border-[#e7e3e0]/25 bg-[#e7e3e0] px-4 text-sm font-semibold uppercase tracking-[0.14em] text-[#080706] transition hover:bg-[#cbc9c8]">
             Войти
           </button>
-          <p className="mt-4 text-xs leading-5 text-[#85786f]">Локальный пароль по умолчанию: adv-admin</p>
+          <p className="mt-4 text-xs leading-5 text-[#85786f]">На Vercel пароль задается переменной ADMIN_PASSWORD.</p>
         </form>
       </main>
     );

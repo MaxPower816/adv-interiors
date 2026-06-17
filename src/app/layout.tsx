@@ -10,22 +10,42 @@ import { Preloader } from "@/components/ui/Preloader";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
-  title: siteConfig.title,
+  title: {
+    default: `${siteConfig.title} | ${siteConfig.name}`,
+    template: `%s | ${siteConfig.name}`,
+  },
   description: siteConfig.description,
+  keywords: siteConfig.keywords,
+  applicationName: siteConfig.name,
+  creator: siteConfig.name,
+  publisher: siteConfig.name,
   alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   openGraph: {
-    title: siteConfig.title,
+    title: `${siteConfig.title} | ${siteConfig.name}`,
     description: siteConfig.description,
     url: siteConfig.url,
     siteName: siteConfig.name,
+    locale: "ru_RU",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: siteConfig.title,
+    title: `${siteConfig.title} | ${siteConfig.name}`,
     description: siteConfig.description,
   },
   icons: { icon: "/favicon.svg" },
+  category: "interior design",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -35,13 +55,28 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       {
         "@type": "ProfessionalService",
         name: siteConfig.name,
+        legalName: siteConfig.legalName,
         url: siteConfig.url,
         telephone: siteConfig.phone,
-        areaServed: "Россия",
+        email: siteConfig.email,
+        areaServed: siteConfig.serviceArea.map((area) => ({ "@type": "AdministrativeArea", name: area })),
         address: { "@type": "PostalAddress", addressLocality: siteConfig.city },
+        priceRange: "$$",
+        openingHours: "Mo-Fr 10:00-19:00",
+        serviceType: [
+          "Дизайн интерьера под ключ",
+          "Дизайн-проект квартиры",
+          "Дизайн-проект дома",
+          "Комплектация интерьера",
+          "Авторское сопровождение ремонта",
+        ],
       },
-      { "@type": "Person", name: siteConfig.designerName, jobTitle: "Interior designer" },
-      { "@type": "WebSite", name: siteConfig.name, url: siteConfig.url },
+      {
+        "@type": "WebSite",
+        name: siteConfig.name,
+        url: siteConfig.url,
+        inLanguage: "ru-RU",
+      },
     ],
   };
 

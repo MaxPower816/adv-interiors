@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 const SESSION_COOKIE = "adv_admin_session";
 
 export function getAdminPassword() {
-  return process.env.ADMIN_PASSWORD || "adv-admin";
+  if (process.env.ADMIN_PASSWORD) return process.env.ADMIN_PASSWORD;
+  return process.env.NODE_ENV === "production" ? "" : "adv-admin";
 }
 
 export function createAdminToken() {
