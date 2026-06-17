@@ -38,7 +38,20 @@ export async function POST(request: Request) {
   }
 
   const { agreement, website, ...leadData } = result.data;
-  const lead = await createLead(leadData);
+  let lead;
+
+  try {
+    lead = await createLead(leadData);
+  } catch (error) {
+    console.error("[contact lead error]", error);
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Заявка не сохранена. Проверьте подключение базы заявок.",
+      },
+      { status: 500 },
+    );
+  }
 
   console.info("[contact lead]", {
     id: lead.id,

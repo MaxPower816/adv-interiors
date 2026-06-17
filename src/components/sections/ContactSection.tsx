@@ -51,6 +51,7 @@ function getLeadSource(activityTrail: Array<{ name: string; path: string }>) {
 
 export function ContactSection() {
   const [success, setSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const {
     register,
     handleSubmit,
@@ -68,6 +69,7 @@ export function ContactSection() {
   }, [setValue]);
 
   const onSubmit = async (data: FormValues) => {
+    setSubmitError("");
     trackEvent("contact_form_submit");
     const activityTrail = readStoredJson<Array<{ name: string; path: string; createdAt: string; payload?: Record<string, string | number | boolean> }>>(TRAIL_KEY, []);
     const utm = readStoredJson<Record<string, string>>(UTM_KEY, {});
@@ -81,7 +83,11 @@ export function ContactSection() {
         utm,
       }),
     });
-    if (!response.ok) throw new Error("Не удалось отправить заявку");
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null) as { message?: string } | null;
+      setSubmitError(payload?.message ?? "Не удалось отправить заявку. Попробуйте позже или свяжитесь с нами напрямую.");
+      return;
+    }
     setSuccess(true);
   };
 
@@ -121,6 +127,7 @@ export function ContactSection() {
               <div className="grid gap-1">
                 {Object.keys(errors).map((key) => <FieldError key={key} name={key as keyof FormValues} />)}
               </div>
+              {submitError ? <p className="text-sm leading-6 text-[#e7b7a3]">{submitError}</p> : null}
               <Button disabled={isSubmitting} className="w-full">{isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Отправить заявку"}</Button>
             </>
           )}
