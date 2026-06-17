@@ -36,8 +36,8 @@ export const cameraPath: CameraKeyframe[] = [
   {
     id: "details",
     progress: 0.71,
-    position: [5.234, 0.98, -0.065],
-    lookAt: [0.35, 1.1, -0.75],
+    position: [4.92, 3.04, 0.34],
+    lookAt: [0.23, 2.08, -0.88],
     mouse: { x: 0.06, y: 0.04 },
     damping: 2.2,
   },
