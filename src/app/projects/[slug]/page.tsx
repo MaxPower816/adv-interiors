@@ -108,7 +108,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             <ProjectGallery project={project} />
             <div className="mt-12 flex flex-wrap items-center justify-between gap-6">
               <Link href={`/projects/${nextProject.slug}`} className="serif text-4xl">Следующий проект: {nextProject.title}</Link>
-              <Link className="inline-flex min-h-11 items-center justify-center border border-[#e7e3e0]/40 bg-[#e7e3e0] px-5 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#080706]" href="/#contact">
+              <Link className="inline-flex min-h-11 items-center justify-center border border-[#e7e3e0]/22 bg-[#080706]/62 px-5 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#e7e3e0] backdrop-blur-md transition duration-300 hover:border-[#e7e3e0]/42 hover:bg-[#e7e3e0]/10" href="/#contact">
                 Хочу похожий проект
               </Link>
             </div>

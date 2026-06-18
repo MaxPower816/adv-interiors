@@ -181,6 +181,7 @@ export function AdminCRM() {
   const [contentMessage, setContentMessage] = useState("");
   const [mediaSaving, setMediaSaving] = useState(false);
   const [mediaMessage, setMediaMessage] = useState("");
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<"cover" | "layout" | "gallery" | null>(null);
   const [activeView, setActiveView] = useState<"leads" | "projects" | "content" | "media">("leads");
 
   const selectedLead = leads.find((lead) => lead.id === selectedId) ?? leads[0] ?? null;
@@ -473,6 +474,25 @@ export function AdminCRM() {
   const copyMediaUrl = async (url: string) => {
     await navigator.clipboard.writeText(url);
     setMediaMessage("URL скопирован.");
+  };
+
+  const openProjectMediaPicker = (target: "cover" | "layout" | "gallery") => {
+    setMediaPickerTarget((current) => (current === target ? null : target));
+    void loadMedia();
+  };
+
+  const applyMediaToProject = (item: MediaItem) => {
+    if (!selectedProject || !mediaPickerTarget) return;
+
+    if (mediaPickerTarget === "gallery") {
+      const nextImages = selectedProject.images.includes(item.url)
+        ? selectedProject.images.filter((image) => image !== item.url)
+        : [...selectedProject.images, item.url];
+      updateSelectedProject({ images: nextImages });
+    } else {
+      updateSelectedProject({ [mediaPickerTarget]: item.url });
+      setMediaPickerTarget(null);
+    }
   };
 
   if (checkingSession) {
@@ -866,14 +886,71 @@ export function AdminCRM() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Обложка URL
+                    <span className="flex items-center justify-between gap-3">
+                      Обложка URL
+                      <button type="button" className="border border-[#e7e3e0]/18 px-2 py-1 text-xs text-[#cbc9c8]" onClick={() => openProjectMediaPicker("cover")}>
+                        Выбрать
+                      </button>
+                    </span>
                     <input className={inputClass} value={selectedProject.cover} onChange={(event) => updateSelectedProject({ cover: event.target.value })} />
                   </label>
                   <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Планировка URL
+                    <span className="flex items-center justify-between gap-3">
+                      Планировка URL
+                      <button type="button" className="border border-[#e7e3e0]/18 px-2 py-1 text-xs text-[#cbc9c8]" onClick={() => openProjectMediaPicker("layout")}>
+                        Выбрать
+                      </button>
+                    </span>
                     <input className={inputClass} value={selectedProject.layout} onChange={(event) => updateSelectedProject({ layout: event.target.value })} />
                   </label>
                 </div>
+
+                {mediaPickerTarget ? (
+                  <div className="border border-[#e7e3e0]/12 bg-[#080706]/50 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">
+                          {mediaPickerTarget === "cover" ? "Выбор обложки" : mediaPickerTarget === "layout" ? "Выбор планировки" : "Выбор галереи"}
+                        </p>
+                        <p className="mt-1 text-sm text-[#a69c96]">
+                          {mediaPickerTarget === "gallery" ? "Можно выбрать несколько. Цифра на картинке — порядок показа." : "Нажмите на одну картинку."}
+                        </p>
+                      </div>
+                      <button type="button" className="border border-[#e7e3e0]/18 px-3 py-2 text-xs text-[#cbc9c8]" onClick={() => setMediaPickerTarget(null)}>
+                        Закрыть
+                      </button>
+                    </div>
+                    <div className="mt-4 grid max-h-80 gap-2 overflow-auto dark-scrollbar sm:grid-cols-2 xl:grid-cols-4">
+                      {media.length === 0 ? (
+                        <p className="text-sm text-[#85786f]">Картинок пока нет. Сначала загрузи их во вкладке “Медиа”.</p>
+                      ) : media.map((item) => {
+                        const galleryIndex = selectedProject.images.indexOf(item.url);
+                        const selected = mediaPickerTarget === "cover"
+                          ? selectedProject.cover === item.url
+                          : mediaPickerTarget === "layout"
+                            ? selectedProject.layout === item.url
+                            : galleryIndex >= 0;
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={`relative aspect-[4/3] overflow-hidden border bg-cover bg-center text-left ${selected ? "border-[#e7e3e0]" : "border-[#e7e3e0]/12"}`}
+                            style={{ backgroundImage: `url(${item.url})` }}
+                            onClick={() => applyMediaToProject(item)}
+                          >
+                            <span className="absolute inset-x-0 bottom-0 bg-[#080706]/75 px-2 py-1 text-xs text-[#e7e3e0] backdrop-blur">{item.title || item.alt || "Изображение"}</span>
+                            {selected ? (
+                              <span className="absolute right-2 top-2 grid h-8 w-8 place-items-center bg-[#e7e3e0] text-sm font-bold text-[#080706]">
+                                {mediaPickerTarget === "gallery" ? galleryIndex + 1 : "✓"}
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="grid gap-2 text-sm text-[#cbc9c8]">
@@ -881,8 +958,30 @@ export function AdminCRM() {
                     <textarea className={textareaClass} value={arrayToLines(selectedProject.works)} onChange={(event) => updateSelectedProject({ works: linesToArray(event.target.value) })} />
                   </label>
                   <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Галерея URL, каждый с новой строки
+                    <span className="flex items-center justify-between gap-3">
+                      Галерея URL, каждый с новой строки
+                      <button type="button" className="border border-[#e7e3e0]/18 px-2 py-1 text-xs text-[#cbc9c8]" onClick={() => openProjectMediaPicker("gallery")}>
+                        Выбрать несколько
+                      </button>
+                    </span>
                     <textarea className={textareaClass} value={arrayToLines(selectedProject.images)} onChange={(event) => updateSelectedProject({ images: linesToArray(event.target.value) })} />
+                    {selectedProject.images.length > 0 ? (
+                      <div className="grid gap-2">
+                        {selectedProject.images.map((image, index) => (
+                          <div key={`${image}-${index}`} className="flex items-center gap-3 border border-[#e7e3e0]/10 bg-[#080706]/45 p-2">
+                            <span className="grid h-7 w-7 shrink-0 place-items-center bg-[#e7e3e0] text-xs font-bold text-[#080706]">{index + 1}</span>
+                            <span className="min-w-0 flex-1 truncate text-xs text-[#a69c96]">{image}</span>
+                            <button
+                              type="button"
+                              className="border border-[#e7b7a3]/35 px-2 py-1 text-xs text-[#e7b7a3]"
+                              onClick={() => updateSelectedProject({ images: selectedProject.images.filter((item) => item !== image) })}
+                            >
+                              убрать
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </label>
                 </div>
 
