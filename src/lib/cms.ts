@@ -22,6 +22,10 @@ type CmsProjectRow = {
   seo_description: string | null;
 };
 
+export type ProjectPatch = Omit<Project, "id"> & {
+  id?: string;
+};
+
 function rowToProject(row: CmsProjectRow): Project {
   return {
     id: row.id,
@@ -44,6 +48,28 @@ function rowToProject(row: CmsProjectRow): Project {
   };
 }
 
+function projectToRow(project: ProjectPatch) {
+  return {
+    published: project.published ?? true,
+    sort_order: project.sortOrder ?? 0,
+    slug: project.slug,
+    title: project.title,
+    city: project.city,
+    area: project.area,
+    year: project.year,
+    type: project.type,
+    description: project.description,
+    works: project.works,
+    cover: project.cover,
+    images: project.images,
+    layout: project.layout,
+    characteristics: project.characteristics,
+    seo_title: project.seoTitle ?? null,
+    seo_description: project.seoDescription ?? null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
 export async function getPublishedProjects() {
   if (!hasSupabaseConfig()) return fallbackProjects;
 
@@ -56,7 +82,48 @@ export async function getPublishedProjects() {
   }
 }
 
+export async function getAdminProjects() {
+  if (!hasSupabaseConfig()) return fallbackProjects;
+
+  const rows = await supabaseRequest<CmsProjectRow[]>("cms_projects?select=*&order=sort_order.asc,created_at.desc");
+  return rows.length ? rows.map(rowToProject) : fallbackProjects;
+}
+
 export async function getProjectBySlug(slug: string) {
   const projects = await getPublishedProjects();
   return projects.find((project) => project.slug === slug) ?? null;
+}
+
+export async function saveProject(project: ProjectPatch) {
+  if (!hasSupabaseConfig()) {
+    throw new Error("Supabase is required for CMS project editing.");
+  }
+
+  if (project.id) {
+    const rows = await supabaseRequest<CmsProjectRow[]>(`cms_projects?id=eq.${encodeURIComponent(project.id)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(projectToRow(project)),
+    });
+
+    return rowToProject(rows[0]);
+  }
+
+  const rows = await supabaseRequest<CmsProjectRow[]>("cms_projects", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify(projectToRow(project)),
+  });
+
+  return rowToProject(rows[0]);
+}
+
+export async function deleteProject(id: string) {
+  if (!hasSupabaseConfig()) {
+    throw new Error("Supabase is required for CMS project editing.");
+  }
+
+  await supabaseRequest(`cms_projects?id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
 }

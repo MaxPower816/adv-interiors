@@ -1,8 +1,8 @@
 "use client";
 
-import { LogOut, RefreshCw, Search, ShieldCheck } from "lucide-react";
+import { LogOut, Plus, RefreshCw, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { ActivityEvent, Lead, LeadStatus } from "@/types";
+import type { ActivityEvent, Lead, LeadStatus, Project } from "@/types";
 
 const statusLabels: Record<LeadStatus, string> = {
   new: "Новая",
@@ -35,6 +35,7 @@ const statusClasses: Record<LeadStatus, string> = {
 const pipelineStatuses: LeadStatus[] = ["new", "contact", "brief-scheduled", "brief-done", "proposal", "thinking", "contract", "refused", "closed"];
 
 const inputClass = "min-h-11 w-full border border-[#e7e3e0]/15 bg-[#080706]/70 px-3 text-sm text-[#e7e3e0] outline-none focus:border-[#e7e3e0]/55";
+const textareaClass = `${inputClass} min-h-28 py-3`;
 
 const eventLabels: Record<string, string> = {
   page_view: "Просмотр страницы",
@@ -66,6 +67,62 @@ function Detail({ label, value }: { label: string; value?: string }) {
   );
 }
 
+function slugify(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/ё/g, "e")
+    .replace(/[^a-z0-9а-я]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function createEmptyProject(): Project {
+  return {
+    slug: `project-${Date.now()}`,
+    title: "Новый проект",
+    city: "Москва",
+    area: "",
+    year: new Date().getFullYear().toString(),
+    type: "Квартира",
+    description: "",
+    works: [],
+    cover: "/images/interior-placeholder.svg",
+    images: [],
+    layout: "/images/plan-placeholder.svg",
+    characteristics: {},
+    published: false,
+    sortOrder: 0,
+    seoTitle: "",
+    seoDescription: "",
+  };
+}
+
+function linesToArray(value: string) {
+  return value.split("\n").map((item) => item.trim()).filter(Boolean);
+}
+
+function arrayToLines(value: string[]) {
+  return value.join("\n");
+}
+
+function characteristicsToLines(value: Record<string, string>) {
+  return Object.entries(value).map(([key, item]) => `${key}: ${item}`).join("\n");
+}
+
+function linesToCharacteristics(value: string) {
+  return Object.fromEntries(
+    value
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [key, ...rest] = line.split(":");
+        return [key.trim(), rest.join(":").trim()];
+      })
+      .filter(([key, item]) => key && item),
+  );
+}
+
 export function AdminCRM() {
   const [authenticated, setAuthenticated] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -73,12 +130,17 @@ export function AdminCRM() {
   const [loginError, setLoginError] = useState("");
   const [leads, setLeads] = useState<Lead[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedId, setSelectedId] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
   const [saving, setSaving] = useState(false);
+  const [projectSaving, setProjectSaving] = useState(false);
+  const [activeView, setActiveView] = useState<"leads" | "projects">("leads");
 
   const selectedLead = leads.find((lead) => lead.id === selectedId) ?? leads[0] ?? null;
+  const selectedProject = projects.find((project) => (project.id || project.slug) === selectedProjectId) ?? projects[0] ?? null;
 
   const filteredLeads = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -127,6 +189,20 @@ export function AdminCRM() {
     setSelectedId((current) => current || data.leads?.[0]?.id || "");
   };
 
+  const loadProjects = async () => {
+    const response = await fetch("/api/admin/projects", { cache: "no-store" });
+
+    if (response.status === 401) {
+      setAuthenticated(false);
+      setProjects([]);
+      return;
+    }
+
+    const data = await response.json();
+    setProjects(data.projects ?? []);
+    setSelectedProjectId((current) => current || data.projects?.[0]?.id || data.projects?.[0]?.slug || "");
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       const response = await fetch("/api/admin/session", { cache: "no-store" });
@@ -136,6 +212,7 @@ export function AdminCRM() {
 
       if (data.authenticated) {
         await loadLeads();
+        await loadProjects();
       }
     };
 
@@ -160,6 +237,7 @@ export function AdminCRM() {
     setAuthenticated(true);
     setPassword("");
     await loadLeads();
+    await loadProjects();
   };
 
   const logout = async () => {
@@ -167,6 +245,7 @@ export function AdminCRM() {
     setAuthenticated(false);
     setLeads([]);
     setActivity([]);
+    setProjects([]);
   };
 
   const updateSelectedLead = async (patch: Partial<Pick<Lead, "status" | "managerNote" | "nextAction" | "nextActionAt" | "potentialValue" | "lostReason">>) => {
@@ -185,6 +264,64 @@ export function AdminCRM() {
     }
 
     setSaving(false);
+  };
+
+  const updateSelectedProject = (patch: Partial<Project>) => {
+    if (!selectedProject) return;
+    const key = selectedProject.id || selectedProject.slug;
+    setProjects((items) => items.map((item) => ((item.id || item.slug) === key ? { ...item, ...patch } : item)));
+  };
+
+  const saveSelectedProject = async () => {
+    if (!selectedProject) return;
+    setProjectSaving(true);
+
+    const response = await fetch("/api/admin/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(selectedProject),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setProjects((items) => {
+        const saved = data.project as Project;
+        const currentKey = selectedProject.id || selectedProject.slug;
+        const exists = items.some((item) => (item.id || item.slug) === currentKey);
+        return exists
+          ? items.map((item) => ((item.id || item.slug) === currentKey ? saved : item))
+          : [saved, ...items];
+      });
+      setSelectedProjectId(data.project.id || data.project.slug);
+    }
+
+    setProjectSaving(false);
+  };
+
+  const addProject = () => {
+    const project = createEmptyProject();
+    setProjects((items) => [project, ...items]);
+    setSelectedProjectId(project.slug);
+    setActiveView("projects");
+  };
+
+  const deleteSelectedProject = async () => {
+    if (!selectedProject?.id) {
+      setProjects((items) => items.filter((item) => item !== selectedProject));
+      setSelectedProjectId(projects[1]?.id || projects[1]?.slug || "");
+      return;
+    }
+
+    const response = await fetch("/api/admin/projects", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: selectedProject.id }),
+    });
+
+    if (response.ok) {
+      setProjects((items) => items.filter((item) => item.id !== selectedProject.id));
+      setSelectedProjectId("");
+    }
   };
 
   if (checkingSession) {
@@ -224,6 +361,10 @@ export function AdminCRM() {
             <RefreshCw className="h-4 w-4" />
             Обновить
           </button>
+          <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm text-[#cbc9c8] transition hover:bg-[#e7e3e0]/8" onClick={addProject}>
+            <Plus className="h-4 w-4" />
+            Проект
+          </button>
           <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm text-[#cbc9c8] transition hover:bg-[#e7e3e0]/8" onClick={logout}>
             <LogOut className="h-4 w-4" />
             Выйти
@@ -231,7 +372,22 @@ export function AdminCRM() {
         </div>
       </header>
 
-      <section className="grid gap-3 py-5 md:grid-cols-5">
+      <nav className="mt-5 flex gap-2 border-b border-[#e7e3e0]/12 pb-3">
+        {([
+          ["leads", "Заявки"],
+          ["projects", "Проекты"],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            className={`min-h-10 border px-4 text-sm ${activeView === value ? "border-[#e7e3e0] bg-[#e7e3e0] text-[#080706]" : "border-[#e7e3e0]/15 text-[#cbc9c8]"}`}
+            onClick={() => setActiveView(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {activeView === "leads" ? <><section className="grid gap-3 py-5 md:grid-cols-5">
         {([
           ["Всего", stats.total],
           ["Новые", stats.new],
@@ -388,7 +544,7 @@ export function AdminCRM() {
               <label className="mt-5 grid gap-2 text-sm text-[#cbc9c8]">
                 Заметка менеджера
                 <textarea
-                  className={`${inputClass} min-h-32 py-3`}
+                  className={textareaClass}
                   value={selectedLead.managerNote || ""}
                   onChange={(event) => setLeads((items) => items.map((item) => (item.id === selectedLead.id ? { ...item, managerNote: event.target.value } : item)))}
                   onBlur={(event) => updateSelectedLead({ managerNote: event.target.value })}
@@ -452,7 +608,153 @@ export function AdminCRM() {
             )}
           </div>
         </div>
-      </section>
+      </section></> : (
+        <section className="grid gap-5 py-5 lg:grid-cols-[0.78fr_1.22fr]">
+          <div className="border border-[#e7e3e0]/12 bg-[#11100f]">
+            <div className="flex items-center justify-between gap-3 border-b border-[#e7e3e0]/12 p-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Portfolio CMS</p>
+                <h2 className="serif mt-1 text-4xl">Проекты</h2>
+              </div>
+              <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm" onClick={loadProjects}>
+                <RefreshCw className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="max-h-[72vh] overflow-auto dark-scrollbar">
+              {projects.length === 0 ? (
+                <p className="p-5 text-sm text-[#85786f]">Проектов в CMS пока нет. Нажми “Проект”, чтобы добавить первый.</p>
+              ) : projects.map((project) => {
+                const key = project.id || project.slug;
+                return (
+                  <button
+                    key={key}
+                    className={`grid w-full gap-2 border-b border-[#e7e3e0]/10 p-4 text-left transition hover:bg-[#e7e3e0]/5 ${selectedProject && (selectedProject.id || selectedProject.slug) === key ? "bg-[#e7e3e0]/8" : ""}`}
+                    onClick={() => setSelectedProjectId(key)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">{project.title}</p>
+                        <p className="mt-1 text-sm text-[#a69c96]">{project.slug}</p>
+                      </div>
+                      <span className={`shrink-0 border px-2 py-1 text-[11px] uppercase tracking-[0.12em] ${project.published ? "border-[#8da98d]/45 text-[#b5d0b5]" : "border-[#e7c891]/45 text-[#e7c891]"}`}>
+                        {project.published ? "Опубликован" : "Черновик"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-[#cbc9c8]">{project.type}, {project.area}, {project.city}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <aside className="border border-[#e7e3e0]/12 bg-[#11100f] p-5">
+            {selectedProject ? (
+              <div className="grid gap-5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Карточка проекта</p>
+                    <h2 className="serif mt-2 text-5xl leading-none">{selectedProject.title}</h2>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7b7a3]/35 px-3 text-sm text-[#e7b7a3]" onClick={deleteSelectedProject}>
+                      <Trash2 className="h-4 w-4" />
+                      Удалить
+                    </button>
+                    <button className="min-h-10 bg-[#e7e3e0] px-4 text-sm font-semibold text-[#080706]" onClick={saveSelectedProject}>
+                      {projectSaving ? "Сохраняю..." : "Сохранить"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Название
+                    <input
+                      className={inputClass}
+                      value={selectedProject.title}
+                      onChange={(event) => updateSelectedProject({ title: event.target.value, slug: selectedProject.slug.startsWith("project-") ? slugify(event.target.value) : selectedProject.slug })}
+                    />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Slug
+                    <input className={inputClass} value={selectedProject.slug} onChange={(event) => updateSelectedProject({ slug: slugify(event.target.value) })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Город
+                    <input className={inputClass} value={selectedProject.city} onChange={(event) => updateSelectedProject({ city: event.target.value })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Площадь
+                    <input className={inputClass} value={selectedProject.area} onChange={(event) => updateSelectedProject({ area: event.target.value })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Год
+                    <input className={inputClass} value={selectedProject.year} onChange={(event) => updateSelectedProject({ year: event.target.value })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Тип
+                    <input className={inputClass} value={selectedProject.type} onChange={(event) => updateSelectedProject({ type: event.target.value })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Порядок
+                    <input className={inputClass} type="number" value={selectedProject.sortOrder ?? 0} onChange={(event) => updateSelectedProject({ sortOrder: Number(event.target.value) })} />
+                  </label>
+                  <label className="flex items-center gap-3 pt-7 text-sm text-[#cbc9c8]">
+                    <input type="checkbox" checked={selectedProject.published ?? true} onChange={(event) => updateSelectedProject({ published: event.target.checked })} />
+                    Опубликован
+                  </label>
+                </div>
+
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Описание
+                  <textarea className={textareaClass} value={selectedProject.description} onChange={(event) => updateSelectedProject({ description: event.target.value })} />
+                </label>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Обложка URL
+                    <input className={inputClass} value={selectedProject.cover} onChange={(event) => updateSelectedProject({ cover: event.target.value })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Планировка URL
+                    <input className={inputClass} value={selectedProject.layout} onChange={(event) => updateSelectedProject({ layout: event.target.value })} />
+                  </label>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Работы, каждая с новой строки
+                    <textarea className={textareaClass} value={arrayToLines(selectedProject.works)} onChange={(event) => updateSelectedProject({ works: linesToArray(event.target.value) })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Галерея URL, каждый с новой строки
+                    <textarea className={textareaClass} value={arrayToLines(selectedProject.images)} onChange={(event) => updateSelectedProject({ images: linesToArray(event.target.value) })} />
+                  </label>
+                </div>
+
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Характеристики, формат key: value
+                  <textarea className={textareaClass} value={characteristicsToLines(selectedProject.characteristics)} onChange={(event) => updateSelectedProject({ characteristics: linesToCharacteristics(event.target.value) })} />
+                </label>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    SEO title
+                    <input className={inputClass} value={selectedProject.seoTitle || ""} onChange={(event) => updateSelectedProject({ seoTitle: event.target.value })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    SEO description
+                    <input className={inputClass} value={selectedProject.seoDescription || ""} onChange={(event) => updateSelectedProject({ seoDescription: event.target.value })} />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-[#85786f]">Выберите проект слева или добавьте новый.</p>
+            )}
+          </aside>
+        </section>
+      )}
     </main>
   );
 }
