@@ -225,6 +225,47 @@ function arrayToComma(value: string[]) {
   return value.join(", ");
 }
 
+async function compressImageForUpload(file: File) {
+  if (file.type === "image/gif" || file.type === "image/webp" && file.size < 3 * 1024 * 1024) {
+    return file;
+  }
+
+  const imageUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = imageUrl;
+    });
+
+    const maxSide = 2200;
+    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+
+    if (!context) return file;
+
+    context.drawImage(image, 0, 0, width, height);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/webp", 0.86);
+    });
+
+    if (!blob || blob.size >= file.size && file.size < 4 * 1024 * 1024) return file;
+
+    const safeName = file.name.replace(/\.[^.]+$/, "") || "image";
+    return new File([blob], `${safeName}.webp`, { type: "image/webp" });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
 function pairsToLines<T>(items: T[], mapper: (item: T) => string) {
   return items.map(mapper).join("\n");
 }
@@ -613,8 +654,16 @@ export function AdminCRM() {
     setMediaSaving(true);
     setMediaMessage("");
 
+    let uploadFile = mediaFile;
+
+    try {
+      uploadFile = await compressImageForUpload(mediaFile);
+    } catch {
+      setMediaMessage("Не получилось автоматически сжать картинку. Попробую загрузить исходник.");
+    }
+
     const formData = new FormData();
-    formData.append("file", mediaFile);
+    formData.append("file", uploadFile);
     formData.append("title", mediaTitle);
     formData.append("alt", mediaAlt);
 
@@ -629,9 +678,10 @@ export function AdminCRM() {
       setMediaTitle("");
       setMediaAlt("");
       setMediaFile(null);
-      setMediaMessage("Картинка загружена. URL можно скопировать.");
+      setMediaMessage(uploadFile.size < mediaFile.size ? "Картинка сжата и загружена. URL можно скопировать." : "Картинка загружена. URL можно скопировать.");
     } else {
-      setMediaMessage("Не удалось загрузить картинку. Проверь Supabase Storage и размер файла.");
+      const data = await response.json().catch(() => null) as { message?: string } | null;
+      setMediaMessage(data?.message ?? "Не удалось загрузить картинку. Проверь Supabase Storage и размер файла.");
     }
 
     setMediaSaving(false);
