@@ -39,8 +39,7 @@ function sanitizeFileName(name: string) {
     .replace(/\.[^.]+$/, "")
     .trim()
     .toLowerCase()
-    .replace(/ё/g, "e")
-    .replace(/[^a-z0-9а-я]+/g, "-")
+    .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 

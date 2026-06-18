@@ -294,60 +294,6 @@ function linesToProcessSteps(value: string): SiteContent["process"]["steps"] {
     .filter((item) => item.title && item.text);
 }
 
-function linesToTestimonials(value: string): SiteContent["testimonials"]["items"] {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [name = "", project = "", city = "", ...textParts] = line.split("|");
-      return { name: name.trim(), project: project.trim(), city: city.trim(), text: textParts.join("|").trim() };
-    })
-    .filter((item) => item.name && item.text);
-}
-
-function linesToObjectTypes(value: string): SiteContent["pricing"]["objectTypes"] {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [key = "", label = "", min = "", ...noteParts] = line.split("|");
-      return { key: key.trim(), label: label.trim(), min: min.trim(), note: noteParts.join("|").trim() };
-    })
-    .filter((item) => item.key && item.label);
-}
-
-function linesToPricePlans(value: string): SiteContent["pricing"]["plans"] {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [id = "", title = "", price = "", duration = "", features = ""] = line.split("|");
-      return {
-        id: id.trim(),
-        title: title.trim(),
-        price: price.trim(),
-        duration: duration.trim(),
-        features: features.split(";").map((item) => item.trim()).filter(Boolean),
-      };
-    })
-    .filter((item) => item.id && item.title);
-}
-
-function linesToFaq(value: string): SiteContent["faq"]["items"] {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [question = "", ...answerParts] = line.split("|");
-      return [question.trim(), answerParts.join("|").trim()] as [string, string];
-    })
-    .filter(([question, answer]) => question && answer);
-}
-
 function SeoCounter({ value, ideal, max }: { value: string; ideal: string; max: number }) {
   const isLong = value.length > max;
 
@@ -383,7 +329,7 @@ export function AdminCRM() {
   const [mediaSaving, setMediaSaving] = useState(false);
   const [mediaMessage, setMediaMessage] = useState("");
   const [mediaPickerTarget, setMediaPickerTarget] = useState<"cover" | "layout" | "gallery" | null>(null);
-  const [activeView, setActiveView] = useState<"leads" | "projects" | "content" | "media">("leads");
+  const [activeView, setActiveView] = useState<"leads" | "projects" | "content" | "media" | "testimonials" | "pricing" | "faq">("leads");
 
   const selectedLead = leads.find((lead) => lead.id === selectedId) ?? leads[0] ?? null;
   const selectedProject = projects.find((project) => (project.id || project.slug) === selectedProjectId) ?? projects[0] ?? null;
@@ -746,6 +692,115 @@ export function AdminCRM() {
     updateSelectedProject({ images: nextImages });
   };
 
+  const updateTestimonial = (index: number, patch: Partial<SiteContent["testimonials"]["items"][number]>) => {
+    const items = content.testimonials.items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item));
+    updateContent({ testimonials: { ...content.testimonials, items } });
+  };
+
+  const addTestimonial = () => {
+    updateContent({
+      testimonials: {
+        ...content.testimonials,
+        items: [...content.testimonials.items, { name: "Новый клиент", project: "", city: "", text: "" }],
+      },
+    });
+    setActiveView("testimonials");
+  };
+
+  const removeTestimonial = (index: number) => {
+    const items = content.testimonials.items.filter((_, itemIndex) => itemIndex !== index);
+    updateContent({ testimonials: { ...content.testimonials, items: items.length ? items : [{ name: "Новый клиент", project: "", city: "", text: "" }] } });
+  };
+
+  const moveTestimonial = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= content.testimonials.items.length) return;
+    const items = [...content.testimonials.items];
+    [items[index], items[targetIndex]] = [items[targetIndex], items[index]];
+    updateContent({ testimonials: { ...content.testimonials, items } });
+  };
+
+  const updateObjectType = (index: number, patch: Partial<SiteContent["pricing"]["objectTypes"][number]>) => {
+    const objectTypes = content.pricing.objectTypes.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item));
+    updateContent({ pricing: { ...content.pricing, objectTypes } });
+  };
+
+  const addObjectType = () => {
+    updateContent({
+      pricing: {
+        ...content.pricing,
+        objectTypes: [...content.pricing.objectTypes, { key: `type-${Date.now()}`, label: "Новый тип", min: "", note: "" }],
+      },
+    });
+    setActiveView("pricing");
+  };
+
+  const removeObjectType = (index: number) => {
+    const objectTypes = content.pricing.objectTypes.filter((_, itemIndex) => itemIndex !== index);
+    updateContent({ pricing: { ...content.pricing, objectTypes: objectTypes.length ? objectTypes : [{ key: "flat", label: "Квартира", min: "", note: "" }] } });
+  };
+
+  const moveObjectType = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= content.pricing.objectTypes.length) return;
+    const objectTypes = [...content.pricing.objectTypes];
+    [objectTypes[index], objectTypes[targetIndex]] = [objectTypes[targetIndex], objectTypes[index]];
+    updateContent({ pricing: { ...content.pricing, objectTypes } });
+  };
+
+  const updatePricePlan = (index: number, patch: Partial<SiteContent["pricing"]["plans"][number]>) => {
+    const plans = content.pricing.plans.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item));
+    updateContent({ pricing: { ...content.pricing, plans } });
+  };
+
+  const addPricePlan = () => {
+    updateContent({
+      pricing: {
+        ...content.pricing,
+        plans: [...content.pricing.plans, { id: `plan-${Date.now()}`, title: "Новый тариф", price: "", duration: "", features: [] }],
+      },
+    });
+    setActiveView("pricing");
+  };
+
+  const removePricePlan = (index: number) => {
+    const plans = content.pricing.plans.filter((_, itemIndex) => itemIndex !== index);
+    updateContent({ pricing: { ...content.pricing, plans: plans.length ? plans : [{ id: "plan", title: "Тариф", price: "", duration: "", features: [] }] } });
+  };
+
+  const movePricePlan = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= content.pricing.plans.length) return;
+    const plans = [...content.pricing.plans];
+    [plans[index], plans[targetIndex]] = [plans[targetIndex], plans[index]];
+    updateContent({ pricing: { ...content.pricing, plans } });
+  };
+
+  const updateFaqItem = (index: number, patch: { question?: string; answer?: string }) => {
+    const items = content.faq.items.map(([question, answer], itemIndex) => (
+      itemIndex === index ? [patch.question ?? question, patch.answer ?? answer] as [string, string] : [question, answer] as [string, string]
+    ));
+    updateContent({ faq: { ...content.faq, items } });
+  };
+
+  const addFaqItem = () => {
+    updateContent({ faq: { ...content.faq, items: [...content.faq.items, ["Новый вопрос", "Ответ"]] } });
+    setActiveView("faq");
+  };
+
+  const removeFaqItem = (index: number) => {
+    const items = content.faq.items.filter((_, itemIndex) => itemIndex !== index);
+    updateContent({ faq: { ...content.faq, items: items.length ? items : [["Новый вопрос", "Ответ"]] } });
+  };
+
+  const moveFaqItem = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= content.faq.items.length) return;
+    const items = [...content.faq.items];
+    [items[index], items[targetIndex]] = [items[targetIndex], items[index]];
+    updateContent({ faq: { ...content.faq, items } });
+  };
+
   if (checkingSession) {
     return <main className="flex min-h-screen items-center justify-center bg-[#080706] text-[#cbc9c8]">Проверяем вход...</main>;
   }
@@ -797,10 +852,13 @@ export function AdminCRM() {
       <nav className="mt-5 flex gap-2 border-b border-[#e7e3e0]/12 pb-3">
         {([
           ["leads", "Заявки"],
-          ["projects", "Проекты"],
-          ["content", "Тексты"],
-          ["media", "Медиа"],
-        ] as const).map(([value, label]) => (
+	          ["projects", "Проекты"],
+	          ["content", "Тексты"],
+	          ["media", "Медиа"],
+	          ["testimonials", "Отзывы"],
+	          ["pricing", "Прайс"],
+	          ["faq", "FAQ"],
+	        ] as const).map(([value, label]) => (
           <button
             key={value}
             className={`min-h-10 border px-4 text-sm ${activeView === value ? "border-[#e7e3e0] bg-[#e7e3e0] text-[#080706]" : "border-[#e7e3e0]/15 text-[#cbc9c8]"}`}
@@ -1327,7 +1385,192 @@ export function AdminCRM() {
             )}
           </aside>
         </section>
-      ) : activeView === "media" ? (
+	      ) : activeView === "testimonials" ? (
+	        <section className="py-5">
+	          <div className="border border-[#e7e3e0]/12 bg-[#11100f] p-5">
+	            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e7e3e0]/12 pb-5">
+	              <div>
+	                <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Reviews CMS</p>
+	                <h2 className="serif mt-2 text-5xl leading-none">Отзывы</h2>
+	                <p className="mt-3 max-w-xl text-sm leading-6 text-[#a69c96]">Редактируй каждый отзыв отдельно, добавляй новые и меняй порядок показа на сайте.</p>
+	              </div>
+	              <div className="flex flex-wrap gap-2">
+	                <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm text-[#cbc9c8]" onClick={addTestimonial}>
+	                  <Plus className="h-4 w-4" />
+	                  Добавить отзыв
+	                </button>
+	                <button className="min-h-10 bg-[#e7e3e0] px-4 text-sm font-semibold text-[#080706]" onClick={saveContent}>
+	                  {contentSaving ? "Сохраняю..." : "Сохранить"}
+	                </button>
+	              </div>
+	            </div>
+	            {contentMessage ? <p className="mt-4 text-sm text-[#d7c4a3]">{contentMessage}</p> : null}
+
+	            <div className="mt-6 grid gap-4 md:grid-cols-2">
+	              <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                Eyebrow
+	                <input className={inputClass} value={content.testimonials.eyebrow} onChange={(event) => updateContent({ testimonials: { ...content.testimonials, eyebrow: event.target.value } })} />
+	              </label>
+	              <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                Заголовок блока
+	                <input className={inputClass} value={content.testimonials.title} onChange={(event) => updateContent({ testimonials: { ...content.testimonials, title: event.target.value } })} />
+	              </label>
+	            </div>
+
+	            <div className="mt-6 grid gap-4">
+	              {content.testimonials.items.map((item, index) => (
+	                <article key={`${item.name}-${index}`} className="grid gap-4 border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+	                  <div className="flex flex-wrap items-center justify-between gap-3">
+	                    <div className="flex items-center gap-3">
+	                      <span className="grid h-8 w-8 place-items-center bg-[#e7e3e0] text-sm font-bold text-[#080706]">{index + 1}</span>
+	                      <h3 className="serif text-3xl">{item.name || "Новый отзыв"}</h3>
+	                    </div>
+	                    <div className="flex gap-2">
+	                      <button className="grid h-9 w-9 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === 0} onClick={() => moveTestimonial(index, -1)} aria-label="Поднять отзыв">
+	                        <ArrowUp className="h-4 w-4" />
+	                      </button>
+	                      <button className="grid h-9 w-9 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === content.testimonials.items.length - 1} onClick={() => moveTestimonial(index, 1)} aria-label="Опустить отзыв">
+	                        <ArrowDown className="h-4 w-4" />
+	                      </button>
+	                      <button className="grid h-9 w-9 place-items-center border border-[#e7b7a3]/35 text-[#e7b7a3]" onClick={() => removeTestimonial(index)} aria-label="Удалить отзыв">
+	                        <Trash2 className="h-4 w-4" />
+	                      </button>
+	                    </div>
+	                  </div>
+	                  <div className="grid gap-3 md:grid-cols-3">
+	                    <label className="grid gap-2 text-sm text-[#cbc9c8]">Имя<input className={inputClass} value={item.name} onChange={(event) => updateTestimonial(index, { name: event.target.value })} /></label>
+	                    <label className="grid gap-2 text-sm text-[#cbc9c8]">Проект<input className={inputClass} value={item.project} onChange={(event) => updateTestimonial(index, { project: event.target.value })} /></label>
+	                    <label className="grid gap-2 text-sm text-[#cbc9c8]">Город<input className={inputClass} value={item.city} onChange={(event) => updateTestimonial(index, { city: event.target.value })} /></label>
+	                  </div>
+	                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                    Текст отзыва
+	                    <textarea className={`${textareaClass} min-h-36`} value={item.text} onChange={(event) => updateTestimonial(index, { text: event.target.value })} />
+	                  </label>
+	                </article>
+	              ))}
+	            </div>
+	          </div>
+	        </section>
+	      ) : activeView === "pricing" ? (
+	        <section className="py-5">
+	          <div className="border border-[#e7e3e0]/12 bg-[#11100f] p-5">
+	            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e7e3e0]/12 pb-5">
+	              <div>
+	                <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Pricing CMS</p>
+	                <h2 className="serif mt-2 text-5xl leading-none">Прайс</h2>
+	                <p className="mt-3 max-w-xl text-sm leading-6 text-[#a69c96]">Отдельно редактируются типы объектов и тарифы. Порядок карточек меняется стрелками.</p>
+	              </div>
+	              <div className="flex flex-wrap gap-2">
+	                <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm text-[#cbc9c8]" onClick={addObjectType}><Plus className="h-4 w-4" />Тип объекта</button>
+	                <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm text-[#cbc9c8]" onClick={addPricePlan}><Plus className="h-4 w-4" />Тариф</button>
+	                <button className="min-h-10 bg-[#e7e3e0] px-4 text-sm font-semibold text-[#080706]" onClick={saveContent}>{contentSaving ? "Сохраняю..." : "Сохранить"}</button>
+	              </div>
+	            </div>
+	            {contentMessage ? <p className="mt-4 text-sm text-[#d7c4a3]">{contentMessage}</p> : null}
+
+	            <div className="mt-6 grid gap-4 md:grid-cols-3">
+	              <label className="grid gap-2 text-sm text-[#cbc9c8]">Eyebrow<input className={inputClass} value={content.pricing.eyebrow} onChange={(event) => updateContent({ pricing: { ...content.pricing, eyebrow: event.target.value } })} /></label>
+	              <label className="grid gap-2 text-sm text-[#cbc9c8]">Заголовок<input className={inputClass} value={content.pricing.title} onChange={(event) => updateContent({ pricing: { ...content.pricing, title: event.target.value } })} /></label>
+	              <label className="grid gap-2 text-sm text-[#cbc9c8]">Фоновая картинка URL<input className={`${inputClass} min-w-0`} value={content.pricing.backgroundImage} onChange={(event) => updateContent({ pricing: { ...content.pricing, backgroundImage: event.target.value } })} /></label>
+	            </div>
+
+	            <div className="mt-8">
+	              <h3 className="serif text-4xl">Типы объектов</h3>
+	              <div className="mt-4 grid gap-3">
+	                {content.pricing.objectTypes.map((item, index) => (
+	                  <article key={`${item.key}-${index}`} className="grid gap-3 border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+	                    <div className="flex items-center justify-between gap-3">
+	                      <span className="grid h-8 w-8 place-items-center bg-[#e7e3e0] text-sm font-bold text-[#080706]">{index + 1}</span>
+	                      <div className="flex gap-2">
+	                        <button className="grid h-9 w-9 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === 0} onClick={() => moveObjectType(index, -1)}><ArrowUp className="h-4 w-4" /></button>
+	                        <button className="grid h-9 w-9 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === content.pricing.objectTypes.length - 1} onClick={() => moveObjectType(index, 1)}><ArrowDown className="h-4 w-4" /></button>
+	                        <button className="grid h-9 w-9 place-items-center border border-[#e7b7a3]/35 text-[#e7b7a3]" onClick={() => removeObjectType(index)}><Trash2 className="h-4 w-4" /></button>
+	                      </div>
+	                    </div>
+	                    <div className="grid gap-3 md:grid-cols-4">
+	                      <label className="grid gap-2 text-sm text-[#cbc9c8]">Ключ<input className={inputClass} value={item.key} onChange={(event) => updateObjectType(index, { key: slugify(event.target.value) || event.target.value })} /></label>
+	                      <label className="grid gap-2 text-sm text-[#cbc9c8]">Название<input className={inputClass} value={item.label} onChange={(event) => updateObjectType(index, { label: event.target.value })} /></label>
+	                      <label className="grid gap-2 text-sm text-[#cbc9c8]">Минимум<input className={inputClass} value={item.min} onChange={(event) => updateObjectType(index, { min: event.target.value })} /></label>
+	                      <label className="grid gap-2 text-sm text-[#cbc9c8]">Заметка<input className={inputClass} value={item.note} onChange={(event) => updateObjectType(index, { note: event.target.value })} /></label>
+	                    </div>
+	                  </article>
+	                ))}
+	              </div>
+	            </div>
+
+	            <div className="mt-8">
+	              <h3 className="serif text-4xl">Тарифы</h3>
+	              <div className="mt-4 grid gap-4 xl:grid-cols-2">
+	                {content.pricing.plans.map((plan, index) => (
+	                  <article key={`${plan.id}-${index}`} className="grid gap-4 border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+	                    <div className="flex items-center justify-between gap-3">
+	                      <div className="flex items-center gap-3">
+	                        <span className="grid h-8 w-8 place-items-center bg-[#e7e3e0] text-sm font-bold text-[#080706]">{index + 1}</span>
+	                        <h4 className="serif text-3xl">{plan.title || "Новый тариф"}</h4>
+	                      </div>
+	                      <div className="flex gap-2">
+	                        <button className="grid h-9 w-9 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === 0} onClick={() => movePricePlan(index, -1)}><ArrowUp className="h-4 w-4" /></button>
+	                        <button className="grid h-9 w-9 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === content.pricing.plans.length - 1} onClick={() => movePricePlan(index, 1)}><ArrowDown className="h-4 w-4" /></button>
+	                        <button className="grid h-9 w-9 place-items-center border border-[#e7b7a3]/35 text-[#e7b7a3]" onClick={() => removePricePlan(index)}><Trash2 className="h-4 w-4" /></button>
+	                      </div>
+	                    </div>
+	                    <div className="grid gap-3 md:grid-cols-2">
+	                      <label className="grid gap-2 text-sm text-[#cbc9c8]">ID<input className={inputClass} value={plan.id} onChange={(event) => updatePricePlan(index, { id: slugify(event.target.value) || event.target.value })} /></label>
+	                      <label className="grid gap-2 text-sm text-[#cbc9c8]">Название<input className={inputClass} value={plan.title} onChange={(event) => updatePricePlan(index, { title: event.target.value })} /></label>
+	                      <label className="grid gap-2 text-sm text-[#cbc9c8]">Цена<input className={inputClass} value={plan.price} onChange={(event) => updatePricePlan(index, { price: event.target.value })} /></label>
+	                      <label className="grid gap-2 text-sm text-[#cbc9c8]">Срок<input className={inputClass} value={plan.duration} onChange={(event) => updatePricePlan(index, { duration: event.target.value })} /></label>
+	                    </div>
+	                    <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                      Что входит, каждый пункт с новой строки
+	                      <textarea className={textareaClass} value={arrayToLines(plan.features)} onChange={(event) => updatePricePlan(index, { features: linesToArray(event.target.value) })} />
+	                    </label>
+	                  </article>
+	                ))}
+	              </div>
+	            </div>
+	          </div>
+	        </section>
+	      ) : activeView === "faq" ? (
+	        <section className="py-5">
+	          <div className="border border-[#e7e3e0]/12 bg-[#11100f] p-5">
+	            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e7e3e0]/12 pb-5">
+	              <div>
+	                <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">FAQ CMS</p>
+	                <h2 className="serif mt-2 text-5xl leading-none">FAQ</h2>
+	                <p className="mt-3 max-w-xl text-sm leading-6 text-[#a69c96]">Каждый вопрос редактируется отдельно. Можно добавлять новые и менять порядок.</p>
+	              </div>
+	              <div className="flex flex-wrap gap-2">
+	                <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm text-[#cbc9c8]" onClick={addFaqItem}><Plus className="h-4 w-4" />Добавить вопрос</button>
+	                <button className="min-h-10 bg-[#e7e3e0] px-4 text-sm font-semibold text-[#080706]" onClick={saveContent}>{contentSaving ? "Сохраняю..." : "Сохранить"}</button>
+	              </div>
+	            </div>
+	            {contentMessage ? <p className="mt-4 text-sm text-[#d7c4a3]">{contentMessage}</p> : null}
+	            <div className="mt-6 grid gap-4 md:grid-cols-2">
+	              <label className="grid gap-2 text-sm text-[#cbc9c8]">Eyebrow<input className={inputClass} value={content.faq.eyebrow} onChange={(event) => updateContent({ faq: { ...content.faq, eyebrow: event.target.value } })} /></label>
+	              <label className="grid gap-2 text-sm text-[#cbc9c8]">Заголовок<input className={inputClass} value={content.faq.title} onChange={(event) => updateContent({ faq: { ...content.faq, title: event.target.value } })} /></label>
+	            </div>
+	            <div className="mt-6 grid gap-4">
+	              {content.faq.items.map(([question, answer], index) => (
+	                <article key={`${question}-${index}`} className="grid gap-4 border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+	                  <div className="flex flex-wrap items-center justify-between gap-3">
+	                    <div className="flex items-center gap-3">
+	                      <span className="grid h-8 w-8 place-items-center bg-[#e7e3e0] text-sm font-bold text-[#080706]">{index + 1}</span>
+	                      <h3 className="serif text-3xl">{question || "Новый вопрос"}</h3>
+	                    </div>
+	                    <div className="flex gap-2">
+	                      <button className="grid h-9 w-9 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === 0} onClick={() => moveFaqItem(index, -1)}><ArrowUp className="h-4 w-4" /></button>
+	                      <button className="grid h-9 w-9 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === content.faq.items.length - 1} onClick={() => moveFaqItem(index, 1)}><ArrowDown className="h-4 w-4" /></button>
+	                      <button className="grid h-9 w-9 place-items-center border border-[#e7b7a3]/35 text-[#e7b7a3]" onClick={() => removeFaqItem(index)}><Trash2 className="h-4 w-4" /></button>
+	                    </div>
+	                  </div>
+	                  <label className="grid gap-2 text-sm text-[#cbc9c8]">Вопрос<input className={inputClass} value={question} onChange={(event) => updateFaqItem(index, { question: event.target.value })} /></label>
+	                  <label className="grid gap-2 text-sm text-[#cbc9c8]">Ответ<textarea className={textareaClass} value={answer} onChange={(event) => updateFaqItem(index, { answer: event.target.value })} /></label>
+	                </article>
+	              ))}
+	            </div>
+	          </div>
+	        </section>
+	      ) : activeView === "media" ? (
         <section className="py-5">
           <div className="grid gap-5 lg:grid-cols-[0.72fr_1.28fr]">
             <div className="border border-[#e7e3e0]/12 bg-[#11100f] p-5">
@@ -1592,69 +1835,7 @@ export function AdminCRM() {
                 </div>
               </div>
 
-              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
-                <h3 className="serif text-4xl">Отзывы</h3>
-                <div className="mt-5 grid gap-4">
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Eyebrow
-                    <input className={inputClass} value={content.testimonials.eyebrow} onChange={(event) => updateContent({ testimonials: { ...content.testimonials, eyebrow: event.target.value } })} />
-                  </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Заголовок
-                    <textarea className={textareaClass} value={content.testimonials.title} onChange={(event) => updateContent({ testimonials: { ...content.testimonials, title: event.target.value } })} />
-                  </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Отзывы, формат: имя|проект|город|текст
-                    <textarea className={`${textareaClass} min-h-40`} value={pairsToLines(content.testimonials.items, (item) => `${item.name}|${item.project}|${item.city}|${item.text}`)} onChange={(event) => updateContent({ testimonials: { ...content.testimonials, items: linesToTestimonials(event.target.value) } })} />
-                  </label>
-                </div>
-              </div>
-
-              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
-                <h3 className="serif text-4xl">Прайс</h3>
-                <div className="mt-5 grid gap-4">
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Eyebrow
-                    <input className={inputClass} value={content.pricing.eyebrow} onChange={(event) => updateContent({ pricing: { ...content.pricing, eyebrow: event.target.value } })} />
-                  </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Заголовок
-                    <textarea className={textareaClass} value={content.pricing.title} onChange={(event) => updateContent({ pricing: { ...content.pricing, title: event.target.value } })} />
-                  </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Фоновая картинка URL
-                    <input className={`${inputClass} min-w-0 break-all`} value={content.pricing.backgroundImage} onChange={(event) => updateContent({ pricing: { ...content.pricing, backgroundImage: event.target.value } })} />
-                  </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Типы объектов, формат: ключ|название|минимум|заметка
-                    <textarea className={textareaClass} value={pairsToLines(content.pricing.objectTypes, (item) => `${item.key}|${item.label}|${item.min}|${item.note}`)} onChange={(event) => updateContent({ pricing: { ...content.pricing, objectTypes: linesToObjectTypes(event.target.value) } })} />
-                  </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Тарифы, формат: id|название|цена|срок|пункт;пункт;пункт
-                    <textarea className={`${textareaClass} min-h-40`} value={pairsToLines(content.pricing.plans, (item) => `${item.id}|${item.title}|${item.price}|${item.duration}|${item.features.join("; ")}`)} onChange={(event) => updateContent({ pricing: { ...content.pricing, plans: linesToPricePlans(event.target.value) } })} />
-                  </label>
-                </div>
-              </div>
-
-              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
-                <h3 className="serif text-4xl">FAQ</h3>
-                <div className="mt-5 grid gap-4">
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Eyebrow
-                    <input className={inputClass} value={content.faq.eyebrow} onChange={(event) => updateContent({ faq: { ...content.faq, eyebrow: event.target.value } })} />
-                  </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Заголовок
-                    <textarea className={textareaClass} value={content.faq.title} onChange={(event) => updateContent({ faq: { ...content.faq, title: event.target.value } })} />
-                  </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Вопросы, формат: вопрос|ответ
-                    <textarea className={`${textareaClass} min-h-40`} value={pairsToLines(content.faq.items, ([question, answer]) => `${question}|${answer}`)} onChange={(event) => updateContent({ faq: { ...content.faq, items: linesToFaq(event.target.value) } })} />
-                  </label>
-                </div>
-              </div>
-
-              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+	              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
                 <h3 className="serif text-4xl">Контакты / форма</h3>
                 <div className="mt-5 grid gap-4">
                   <label className="grid gap-2 text-sm text-[#cbc9c8]">
