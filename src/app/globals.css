@@ -1,7 +1,31 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Benzin";
+  src:
+    url("/fonts/benzin-bold.otf") format("opentype"),
+    url("/fonts/Benzin-Semibold.woff2") format("woff2"),
+    url("/fonts/Benzin-Semibold.woff") format("woff"),
+    url("/fonts/Benzin-Semibold.ttf") format("truetype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: "Benzin";
+  src:
+    url("/fonts/Benzin-Regular.woff2") format("woff2"),
+    url("/fonts/Benzin-Regular.woff") format("woff"),
+    url("/fonts/Benzin-Regular.ttf") format("truetype");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
 :root {
-  --font-serif: "Cormorant Garamond", "Georgia", "Times New Roman", serif;
+  --font-heading: "Benzin", "Cormorant Garamond", "Georgia", "Times New Roman", serif;
+  --font-serif: var(--font-heading);
   --font-sans: "Manrope", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --color-background: #080706;
   --color-background-soft: #11100f;
@@ -64,7 +88,9 @@ a {
 }
 
 .serif {
-  font-family: var(--font-serif);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .sans {
