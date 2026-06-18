@@ -100,6 +100,10 @@ function createEmptyProject(): Project {
     year: new Date().getFullYear().toString(),
     type: "Квартира",
     description: "",
+    challenge: "",
+    solution: "",
+    materials: "",
+    result: "",
     works: [],
     cover: "/images/interior-placeholder.svg",
     images: [],
@@ -883,6 +887,31 @@ export function AdminCRM() {
                   Описание
                   <textarea className={textareaClass} value={selectedProject.description} onChange={(event) => updateSelectedProject({ description: event.target.value })} />
                 </label>
+
+                <div className="grid gap-4 border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Страница проекта</p>
+                    <h3 className="serif mt-1 text-4xl">Тексты кейса</h3>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                      Задача проекта
+                      <textarea className={textareaClass} value={selectedProject.challenge || ""} onChange={(event) => updateSelectedProject({ challenge: event.target.value })} />
+                    </label>
+                    <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                      Решение
+                      <textarea className={textareaClass} value={selectedProject.solution || ""} onChange={(event) => updateSelectedProject({ solution: event.target.value })} />
+                    </label>
+                    <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                      Материалы
+                      <textarea className={textareaClass} value={selectedProject.materials || ""} onChange={(event) => updateSelectedProject({ materials: event.target.value })} />
+                    </label>
+                    <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                      Результат
+                      <textarea className={textareaClass} value={selectedProject.result || ""} onChange={(event) => updateSelectedProject({ result: event.target.value })} />
+                    </label>
+                  </div>
+                </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="grid gap-2 text-sm text-[#cbc9c8]">

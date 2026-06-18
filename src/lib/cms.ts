@@ -14,6 +14,10 @@ type CmsProjectRow = {
   year: string;
   type: string;
   description: string;
+  challenge: string | null;
+  solution: string | null;
+  materials: string | null;
+  result: string | null;
   works: string[];
   cover: string;
   images: string[];
@@ -47,6 +51,10 @@ function rowToProject(row: CmsProjectRow): Project {
     year: row.year,
     type: row.type,
     description: row.description,
+    challenge: row.challenge ?? undefined,
+    solution: row.solution ?? undefined,
+    materials: row.materials ?? undefined,
+    result: row.result ?? undefined,
     works: Array.isArray(row.works) ? row.works : [],
     cover: row.cover || "/images/interior-placeholder.svg",
     images: Array.isArray(row.images) ? row.images : [],
@@ -70,6 +78,10 @@ function projectToRow(project: ProjectPatch) {
     year: project.year,
     type: project.type,
     description: project.description,
+    challenge: project.challenge ?? null,
+    solution: project.solution ?? null,
+    materials: project.materials ?? null,
+    result: project.result ?? null,
     works: project.works,
     cover: project.cover,
     images: project.images,

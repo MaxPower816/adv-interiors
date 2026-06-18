@@ -12,6 +12,10 @@ export type Project = {
   year: string;
   type: string;
   description: string;
+  challenge?: string;
+  solution?: string;
+  materials?: string;
+  result?: string;
   works: string[];
   cover: string;
   images: string[];

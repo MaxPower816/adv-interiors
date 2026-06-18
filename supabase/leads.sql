@@ -71,6 +71,10 @@ create table if not exists public.cms_projects (
   year text not null default '',
   type text not null default '',
   description text not null default '',
+  challenge text,
+  solution text,
+  materials text,
+  result text,
   works jsonb not null default '[]'::jsonb,
   cover text not null default '',
   images jsonb not null default '[]'::jsonb,
@@ -79,6 +83,11 @@ create table if not exists public.cms_projects (
   seo_title text,
   seo_description text
 );
+
+alter table public.cms_projects add column if not exists challenge text;
+alter table public.cms_projects add column if not exists solution text;
+alter table public.cms_projects add column if not exists materials text;
+alter table public.cms_projects add column if not exists result text;
 
 create index if not exists cms_projects_published_sort_idx on public.cms_projects (published, sort_order);
 create index if not exists cms_projects_slug_idx on public.cms_projects (slug);

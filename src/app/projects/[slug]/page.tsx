@@ -55,6 +55,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const publishedProjects = await getPublishedProjects();
   const projectIndex = publishedProjects.findIndex((item) => item.slug === project.slug);
   const nextProject = publishedProjects[(projectIndex + 1) % publishedProjects.length] ?? publishedProjects[0] ?? project;
+  const challenge = project.challenge || "Концепция строится вокруг повседневных сценариев, света и спокойной материальности.";
+  const solution = project.solution || "Планировка поддерживает приватность и мягкую коммуникацию между зонами.";
+  const materials = project.materials || "Материалы: натуральный шпон, камень, тактильный текстиль, теплый металл и матовые поверхности.";
+  const result = project.result || "Результат: интерьер выглядит собранным, но не перегруженным, и сохраняет запас для жизни клиента.";
   const projectJsonLd = {
     "@context": "https://schema.org",
     "@type": "CreativeWork",
@@ -97,9 +101,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               <ul className="mt-8 grid gap-3 text-[#cbc9c8]">{project.works.map((work) => <li key={work}>— {work}</li>)}</ul>
             </div>
             <div className="grid gap-6 text-[#cbc9c8]">
-              <p>Концепция строится вокруг повседневных сценариев, света и спокойной материальности. Планировка поддерживает приватность и мягкую коммуникацию между зонами.</p>
-              <p>Материалы: натуральный шпон, камень, тактильный текстиль, теплый металл и матовые поверхности.</p>
-              <p>Результат: интерьер выглядит собранным, но не перегруженным, и сохраняет запас для жизни клиента.</p>
+              <p>{challenge}</p>
+              <p>{solution}</p>
+              <p>{materials}</p>
+              <p>{result}</p>
             </div>
           </div>
         </section>
