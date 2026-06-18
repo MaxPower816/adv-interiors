@@ -46,6 +46,12 @@ export type SiteContent = {
     text: string;
     stats: SiteStat[];
   };
+  seo: {
+    title: string;
+    description: string;
+    keywords: string[];
+    ogImage: string;
+  };
 };
 
 export type MediaItem = {

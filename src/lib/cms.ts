@@ -1,4 +1,5 @@
 import type { Project, SiteContent } from "@/types";
+import { siteConfig } from "@/config/site";
 import { projects as fallbackProjects } from "@/content/projects";
 import { aboutContent, heroCopy } from "@/content/site-content";
 import { hasSupabaseConfig, supabaseRequest } from "./supabase-rest";
@@ -39,7 +40,23 @@ export type ProjectPatch = Omit<Project, "id"> & {
 export const defaultSiteContent: SiteContent = {
   hero: heroCopy,
   about: aboutContent,
+  seo: {
+    title: siteConfig.title,
+    description: siteConfig.description,
+    keywords: siteConfig.keywords,
+    ogImage: "/images/interior-placeholder.svg",
+  },
 };
+
+function normalizeSiteContent(content?: Partial<SiteContent>) {
+  return {
+    ...defaultSiteContent,
+    ...content,
+    hero: { ...defaultSiteContent.hero, ...(content?.hero ?? {}) },
+    about: { ...defaultSiteContent.about, ...(content?.about ?? {}) },
+    seo: { ...defaultSiteContent.seo, ...(content?.seo ?? {}) },
+  };
+}
 
 function rowToProject(row: CmsProjectRow): Project {
   return {
@@ -146,7 +163,7 @@ export async function getSiteContent() {
       cache: "force-cache",
       next: { revalidate: 60 },
     });
-    return rows[0]?.payload ?? defaultSiteContent;
+    return normalizeSiteContent(rows[0]?.payload);
   } catch (error) {
     console.error("[cms site content fallback]", error);
     return defaultSiteContent;
@@ -158,7 +175,7 @@ export async function getAdminSiteContent() {
 
   try {
     const rows = await supabaseRequest<CmsContentBlockRow[]>("cms_content_blocks?id=eq.site&select=id,payload");
-    return rows[0]?.payload ?? defaultSiteContent;
+    return normalizeSiteContent(rows[0]?.payload);
   } catch (error) {
     console.error("[cms admin content fallback]", error);
     return defaultSiteContent;

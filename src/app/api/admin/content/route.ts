@@ -23,6 +23,12 @@ const siteContentSchema = z.object({
     text: z.string().min(1).max(700),
     stats: z.array(statSchema).min(1).max(8),
   }),
+  seo: z.object({
+    title: z.string().min(1).max(180),
+    description: z.string().min(1).max(320),
+    keywords: z.array(z.string().min(1).max(80)).max(30),
+    ogImage: z.string().max(800),
+  }),
 });
 
 export async function GET() {

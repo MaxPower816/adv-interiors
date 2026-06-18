@@ -61,6 +61,12 @@ const emptyContent: SiteContent = {
     text: "",
     stats: [],
   },
+  seo: {
+    title: "",
+    description: "",
+    keywords: [],
+    ogImage: "",
+  },
 };
 
 function formatDate(value: string) {
@@ -160,6 +166,24 @@ function linesToStats(value: string) {
       };
     })
     .filter((stat) => stat.label);
+}
+
+function commaToArray(value: string) {
+  return value.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function arrayToComma(value: string[]) {
+  return value.join(", ");
+}
+
+function SeoCounter({ value, ideal, max }: { value: string; ideal: string; max: number }) {
+  const isLong = value.length > max;
+
+  return (
+    <span className={isLong ? "text-[#e7b7a3]" : "text-[#85786f]"}>
+      {value.length}/{max} · лучше {ideal}
+    </span>
+  );
 }
 
 export function AdminCRM() {
@@ -1093,15 +1117,28 @@ export function AdminCRM() {
                   <textarea className={textareaClass} value={characteristicsToLines(selectedProject.characteristics)} onChange={(event) => updateSelectedProject({ characteristics: linesToCharacteristics(event.target.value) })} />
                 </label>
 
-                <div className="grid gap-3 md:grid-cols-2">
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    SEO title
-                    <input className={inputClass} value={selectedProject.seoTitle || ""} onChange={(event) => updateSelectedProject({ seoTitle: event.target.value })} />
-                  </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    SEO description
-                    <input className={inputClass} value={selectedProject.seoDescription || ""} onChange={(event) => updateSelectedProject({ seoDescription: event.target.value })} />
-                  </label>
+                <div className="grid gap-4 border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Project SEO</p>
+                    <h3 className="serif mt-1 text-4xl">SEO проекта</h3>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                      SEO title
+                      <input className={inputClass} value={selectedProject.seoTitle || ""} onChange={(event) => updateSelectedProject({ seoTitle: event.target.value })} />
+                      <SeoCounter value={selectedProject.seoTitle || ""} ideal="45-65" max={70} />
+                    </label>
+                    <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                      SEO description
+                      <textarea className={textareaClass} value={selectedProject.seoDescription || ""} onChange={(event) => updateSelectedProject({ seoDescription: event.target.value })} />
+                      <SeoCounter value={selectedProject.seoDescription || ""} ideal="120-160" max={180} />
+                    </label>
+                  </div>
+                  <div className="border border-[#e7e3e0]/10 bg-[#11100f] p-4">
+                    <p className="text-sm text-[#9bb7ff]">{selectedProject.seoTitle || `${selectedProject.title}: дизайн интерьера ${selectedProject.type.toLowerCase()} ${selectedProject.area}`}</p>
+                    <p className="mt-1 text-xs text-[#8da98d]">adv-interiors.vercel.app/projects/{selectedProject.slug}</p>
+                    <p className="mt-2 text-sm leading-6 text-[#cbc9c8]">{selectedProject.seoDescription || selectedProject.description}</p>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1246,6 +1283,38 @@ export function AdminCRM() {
                 <div className="border border-[#e7e3e0]/10 bg-[#080706]/50 p-4 text-sm leading-6 text-[#a69c96]">
                   Пример строки для цифр: <span className="text-[#e7e3e0]">8|+|лет в дизайне</span>
                 </div>
+              </div>
+            </div>
+
+            <div className="mt-6 border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Homepage SEO</p>
+                <h3 className="serif mt-1 text-4xl">SEO главной</h3>
+              </div>
+              <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Title
+                  <input className={inputClass} value={content.seo.title} onChange={(event) => updateContent({ seo: { ...content.seo, title: event.target.value } })} />
+                  <SeoCounter value={content.seo.title} ideal="45-65" max={70} />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  OG-картинка URL
+                  <input className={inputClass} value={content.seo.ogImage} onChange={(event) => updateContent({ seo: { ...content.seo, ogImage: event.target.value } })} />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8] lg:col-span-2">
+                  Description
+                  <textarea className={textareaClass} value={content.seo.description} onChange={(event) => updateContent({ seo: { ...content.seo, description: event.target.value } })} />
+                  <SeoCounter value={content.seo.description} ideal="120-160" max={180} />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8] lg:col-span-2">
+                  Keywords через запятую
+                  <textarea className={textareaClass} value={arrayToComma(content.seo.keywords)} onChange={(event) => updateContent({ seo: { ...content.seo, keywords: commaToArray(event.target.value) } })} />
+                </label>
+              </div>
+              <div className="mt-5 border border-[#e7e3e0]/10 bg-[#11100f] p-4">
+                <p className="text-sm text-[#9bb7ff]">{content.seo.title || "Title главной"}</p>
+                <p className="mt-1 text-xs text-[#8da98d]">adv-interiors.vercel.app</p>
+                <p className="mt-2 text-sm leading-6 text-[#cbc9c8]">{content.seo.description || "Description главной страницы"}</p>
               </div>
             </div>
           </div>

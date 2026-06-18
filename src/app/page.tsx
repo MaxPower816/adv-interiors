@@ -1,4 +1,5 @@
 import Script from "next/script";
+import type { Metadata } from "next";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { HeroSection } from "@/components/hero/HeroSection";
@@ -15,6 +16,35 @@ import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import { siteConfig } from "@/config/site";
 import { faq } from "@/content/faq";
 import { getSiteContent } from "@/lib/cms";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getSiteContent();
+  const title = content.seo.title;
+  const description = content.seo.description;
+  const image = content.seo.ogImage || "/images/interior-placeholder.svg";
+
+  return {
+    title,
+    description,
+    keywords: content.seo.keywords,
+    alternates: { canonical: siteConfig.url },
+    openGraph: {
+      title,
+      description,
+      url: siteConfig.url,
+      siteName: siteConfig.name,
+      type: "website",
+      locale: "ru_RU",
+      images: [{ url: image, alt: title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function Home() {
   const content = await getSiteContent();
