@@ -6,9 +6,11 @@ import type { Project } from "@/types";
 import { trackEvent } from "@/lib/utils";
 
 export function ProjectCard({ project, index }: { project: Project; index: number }) {
+  const cover = project.cover || "/images/interior-placeholder.svg";
+
   return (
     <article className="group relative h-[72vh] min-h-[520px] w-[82vw] shrink-0 overflow-hidden border border-[#e7e3e0]/12 md:w-[46vw]">
-      <Image src={project.cover} alt={project.title} fill className="object-cover transition duration-700 group-hover:scale-105" />
+      <Image src={cover} alt={project.title} fill className="object-cover transition duration-700 group-hover:scale-105" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/80 via-transparent to-[#050505]/20" />
       <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
         <p className="text-xs uppercase tracking-[0.28em] text-[#a69c96]">{String(index + 1).padStart(2, "0")} / {project.city} / {project.area}</p>
