@@ -36,6 +36,7 @@ const pipelineStatuses: LeadStatus[] = ["new", "contact", "brief-scheduled", "br
 
 const inputClass = "min-h-11 w-full border border-[#e7e3e0]/15 bg-[#080706]/70 px-3 text-sm text-[#e7e3e0] outline-none focus:border-[#e7e3e0]/55";
 const textareaClass = `${inputClass} min-h-28 py-3`;
+type ContentMediaTarget = "about.image" | "seo.ogImage" | "beforeAfter.beforeImage" | "beforeAfter.afterImage" | "pricing.backgroundImage";
 
 const eventLabels: Record<string, string> = {
   page_view: "Просмотр страницы",
@@ -266,34 +267,6 @@ async function compressImageForUpload(file: File) {
   }
 }
 
-function pairsToLines<T>(items: T[], mapper: (item: T) => string) {
-  return items.map(mapper).join("\n");
-}
-
-function linesToServices(value: string): SiteContent["services"]["items"] {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [title = "", ...textParts] = line.split("|");
-      return { title: title.trim(), text: textParts.join("|").trim() };
-    })
-    .filter((item) => item.title && item.text);
-}
-
-function linesToProcessSteps(value: string): SiteContent["process"]["steps"] {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [title = "", ...textParts] = line.split("|");
-      return { title: title.trim(), text: textParts.join("|").trim() };
-    })
-    .filter((item) => item.title && item.text);
-}
-
 function SeoCounter({ value, ideal, max }: { value: string; ideal: string; max: number }) {
   const isLong = value.length > max;
 
@@ -329,6 +302,7 @@ export function AdminCRM() {
   const [mediaSaving, setMediaSaving] = useState(false);
   const [mediaMessage, setMediaMessage] = useState("");
   const [mediaPickerTarget, setMediaPickerTarget] = useState<"cover" | "layout" | "gallery" | null>(null);
+  const [contentMediaTarget, setContentMediaTarget] = useState<ContentMediaTarget | null>(null);
   const [activeView, setActiveView] = useState<"leads" | "projects" | "content" | "media" | "testimonials" | "pricing" | "faq">("leads");
 
   const selectedLead = leads.find((lead) => lead.id === selectedId) ?? leads[0] ?? null;
@@ -669,6 +643,81 @@ export function AdminCRM() {
     }
   };
 
+  const openContentMediaPicker = (target: ContentMediaTarget) => {
+    setContentMediaTarget((current) => (current === target ? null : target));
+    void loadMedia();
+  };
+
+  const applyMediaToContent = (item: MediaItem) => {
+    if (!contentMediaTarget) return;
+
+    if (contentMediaTarget === "about.image") {
+      updateContent({ about: { ...content.about, image: item.url } });
+    }
+
+    if (contentMediaTarget === "seo.ogImage") {
+      updateContent({ seo: { ...content.seo, ogImage: item.url } });
+    }
+
+    if (contentMediaTarget === "beforeAfter.beforeImage") {
+      updateContent({ beforeAfter: { ...content.beforeAfter, beforeImage: item.url } });
+    }
+
+    if (contentMediaTarget === "beforeAfter.afterImage") {
+      updateContent({ beforeAfter: { ...content.beforeAfter, afterImage: item.url } });
+    }
+
+    if (contentMediaTarget === "pricing.backgroundImage") {
+      updateContent({ pricing: { ...content.pricing, backgroundImage: item.url } });
+    }
+
+    setContentMediaTarget(null);
+  };
+
+  const updateServiceItem = (index: number, patch: Partial<SiteContent["services"]["items"][number]>) => {
+    const items = content.services.items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item));
+    updateContent({ services: { ...content.services, items } });
+  };
+
+  const addServiceItem = () => {
+    updateContent({ services: { ...content.services, items: [...content.services.items, { title: "Новая услуга", text: "" }] } });
+  };
+
+  const removeServiceItem = (index: number) => {
+    const items = content.services.items.filter((_, itemIndex) => itemIndex !== index);
+    updateContent({ services: { ...content.services, items: items.length ? items : [{ title: "Новая услуга", text: "" }] } });
+  };
+
+  const moveServiceItem = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= content.services.items.length) return;
+    const items = [...content.services.items];
+    [items[index], items[targetIndex]] = [items[targetIndex], items[index]];
+    updateContent({ services: { ...content.services, items } });
+  };
+
+  const updateProcessStep = (index: number, patch: Partial<SiteContent["process"]["steps"][number]>) => {
+    const steps = content.process.steps.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item));
+    updateContent({ process: { ...content.process, steps } });
+  };
+
+  const addProcessStep = () => {
+    updateContent({ process: { ...content.process, steps: [...content.process.steps, { title: "Новый этап", text: "" }] } });
+  };
+
+  const removeProcessStep = (index: number) => {
+    const steps = content.process.steps.filter((_, itemIndex) => itemIndex !== index);
+    updateContent({ process: { ...content.process, steps: steps.length ? steps : [{ title: "Новый этап", text: "" }] } });
+  };
+
+  const moveProcessStep = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= content.process.steps.length) return;
+    const steps = [...content.process.steps];
+    [steps[index], steps[targetIndex]] = [steps[targetIndex], steps[index]];
+    updateContent({ process: { ...content.process, steps } });
+  };
+
   const moveProject = (key: string, direction: -1 | 1) => {
     setProjects((items) => {
       const currentIndex = items.findIndex((item) => (item.id || item.slug) === key);
@@ -868,6 +917,35 @@ export function AdminCRM() {
           </button>
         ))}
       </nav>
+
+      {contentMediaTarget ? (
+        <section className="mt-5 border border-[#e7e3e0]/12 bg-[#11100f] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Media picker</p>
+              <h2 className="serif mt-1 text-3xl">Выбор картинки</h2>
+            </div>
+            <button type="button" className="border border-[#e7e3e0]/18 px-3 py-2 text-xs text-[#cbc9c8]" onClick={() => setContentMediaTarget(null)}>
+              Закрыть
+            </button>
+          </div>
+          <div className="mt-4 grid max-h-80 gap-2 overflow-auto dark-scrollbar sm:grid-cols-3 xl:grid-cols-6">
+            {media.length === 0 ? (
+              <p className="text-sm text-[#85786f]">Картинок пока нет. Сначала загрузи их во вкладке “Медиа”.</p>
+            ) : media.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="relative aspect-[4/3] overflow-hidden border border-[#e7e3e0]/12 bg-cover bg-center text-left"
+                style={{ backgroundImage: `url(${item.url})` }}
+                onClick={() => applyMediaToContent(item)}
+              >
+                <span className="absolute inset-x-0 bottom-0 bg-[#080706]/75 px-2 py-1 text-xs text-[#e7e3e0] backdrop-blur">{item.title || item.alt || "Изображение"}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {activeView === "leads" ? <><section className="grid gap-3 py-5 md:grid-cols-5">
         {([
@@ -1468,13 +1546,32 @@ export function AdminCRM() {
 	            </div>
 	            {contentMessage ? <p className="mt-4 text-sm text-[#d7c4a3]">{contentMessage}</p> : null}
 
-	            <div className="mt-6 grid gap-4 md:grid-cols-3">
-	              <label className="grid gap-2 text-sm text-[#cbc9c8]">Eyebrow<input className={inputClass} value={content.pricing.eyebrow} onChange={(event) => updateContent({ pricing: { ...content.pricing, eyebrow: event.target.value } })} /></label>
-	              <label className="grid gap-2 text-sm text-[#cbc9c8]">Заголовок<input className={inputClass} value={content.pricing.title} onChange={(event) => updateContent({ pricing: { ...content.pricing, title: event.target.value } })} /></label>
-	              <label className="grid gap-2 text-sm text-[#cbc9c8]">Фоновая картинка URL<input className={`${inputClass} min-w-0`} value={content.pricing.backgroundImage} onChange={(event) => updateContent({ pricing: { ...content.pricing, backgroundImage: event.target.value } })} /></label>
-	            </div>
+		            <div className="mt-6 grid gap-4 md:grid-cols-3">
+		              <label className="grid gap-2 text-sm text-[#cbc9c8]">Eyebrow<input className={inputClass} value={content.pricing.eyebrow} onChange={(event) => updateContent({ pricing: { ...content.pricing, eyebrow: event.target.value } })} /></label>
+		              <label className="grid gap-2 text-sm text-[#cbc9c8]">Заголовок<input className={inputClass} value={content.pricing.title} onChange={(event) => updateContent({ pricing: { ...content.pricing, title: event.target.value } })} /></label>
+		              <label className="grid gap-2 text-sm text-[#cbc9c8]">
+		                <span className="flex items-center justify-between gap-3">
+		                  Фоновая картинка URL
+		                  <button type="button" className="border border-[#e7e3e0]/18 px-2 py-1 text-xs text-[#cbc9c8]" onClick={() => openContentMediaPicker("pricing.backgroundImage")}>Выбрать</button>
+		                </span>
+		                <input className={`${inputClass} min-w-0`} value={content.pricing.backgroundImage} onChange={(event) => updateContent({ pricing: { ...content.pricing, backgroundImage: event.target.value } })} />
+		              </label>
+		            </div>
 
-	            <div className="mt-8">
+		            <div className="mt-5 border border-[#e7e3e0]/10 bg-[#080706]/50 p-4">
+		              <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Превью прайса</p>
+		              <div className={`mt-3 min-h-44 border border-[#e7e3e0]/12 bg-cover bg-center p-5 ${content.pricing.backgroundImage ? "" : "bg-[#181615]"}`} style={content.pricing.backgroundImage ? { backgroundImage: `linear-gradient(rgba(5,5,5,.68), rgba(5,5,5,.68)), url(${content.pricing.backgroundImage})` } : undefined}>
+		                <p className="text-xs uppercase tracking-[0.22em] text-[#a69c96]">{content.pricing.eyebrow || "Eyebrow"}</p>
+		                <h3 className="serif mt-3 text-5xl leading-none">{content.pricing.title || "Заголовок"}</h3>
+		                <div className="mt-5 flex flex-wrap gap-2">
+		                  {content.pricing.objectTypes.slice(0, 4).map((item) => (
+		                    <span key={item.key} className="border border-[#e7e3e0]/20 px-3 py-2 text-xs text-[#cbc9c8]">{item.label}</span>
+		                  ))}
+		                </div>
+		              </div>
+		            </div>
+
+		            <div className="mt-8">
 	              <h3 className="serif text-4xl">Типы объектов</h3>
 	              <div className="mt-4 grid gap-3">
 	                {content.pricing.objectTypes.map((item, index) => (
@@ -1696,10 +1793,23 @@ export function AdminCRM() {
                   Текст
                   <textarea className={textareaClass} value={content.about.text} onChange={(event) => updateContent({ about: { ...content.about, text: event.target.value } })} />
                 </label>
-                <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                  Картинка блока URL
-                  <input className={`${inputClass} min-w-0 break-all`} value={content.about.image} onChange={(event) => updateContent({ about: { ...content.about, image: event.target.value } })} />
-                </label>
+	                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                  <span className="flex items-center justify-between gap-3">
+	                    Картинка блока URL
+	                    <button type="button" className="border border-[#e7e3e0]/18 px-2 py-1 text-xs text-[#cbc9c8]" onClick={() => openContentMediaPicker("about.image")}>Выбрать</button>
+	                  </span>
+	                  <input className={`${inputClass} min-w-0 break-all`} value={content.about.image} onChange={(event) => updateContent({ about: { ...content.about, image: event.target.value } })} />
+	                </label>
+	                <div className="border border-[#e7e3e0]/10 bg-[#080706]/50 p-4">
+	                  <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Превью</p>
+	                  <div className="mt-3 grid gap-3 sm:grid-cols-[120px_1fr]">
+	                    <div className={`aspect-[4/5] border border-[#e7e3e0]/12 bg-cover bg-center ${content.about.image ? "" : "bg-[#181615]"}`} style={content.about.image ? { backgroundImage: `url(${content.about.image})` } : undefined} />
+	                    <div>
+	                      <p className="serif whitespace-pre-line text-3xl leading-none">{content.about.title || "Заголовок"}</p>
+	                      <p className="mt-3 text-sm leading-6 text-[#a69c96]">{content.about.text || "Текст блока"}</p>
+	                    </div>
+	                  </div>
+	                </div>
                 <label className="grid gap-2 text-sm text-[#cbc9c8]">
                   Цифры, формат: число|суффикс|подпись
                   <textarea
@@ -1725,10 +1835,13 @@ export function AdminCRM() {
                   <input className={inputClass} value={content.seo.title} onChange={(event) => updateContent({ seo: { ...content.seo, title: event.target.value } })} />
                   <SeoCounter value={content.seo.title} ideal="45-65" max={70} />
                 </label>
-                <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                  OG-картинка URL
-                  <input className={inputClass} value={content.seo.ogImage} onChange={(event) => updateContent({ seo: { ...content.seo, ogImage: event.target.value } })} />
-                </label>
+	                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                  <span className="flex items-center justify-between gap-3">
+	                    OG-картинка URL
+	                    <button type="button" className="border border-[#e7e3e0]/18 px-2 py-1 text-xs text-[#cbc9c8]" onClick={() => openContentMediaPicker("seo.ogImage")}>Выбрать</button>
+	                  </span>
+	                  <input className={inputClass} value={content.seo.ogImage} onChange={(event) => updateContent({ seo: { ...content.seo, ogImage: event.target.value } })} />
+	                </label>
                 <label className="grid gap-2 text-sm text-[#cbc9c8] lg:col-span-2">
                   Description
                   <textarea className={textareaClass} value={content.seo.description} onChange={(event) => updateContent({ seo: { ...content.seo, description: event.target.value } })} />
@@ -1762,10 +1875,43 @@ export function AdminCRM() {
                     Описание
                     <textarea className={textareaClass} value={content.services.text} onChange={(event) => updateContent({ services: { ...content.services, text: event.target.value } })} />
                   </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Список услуг, формат: название|текст
-                    <textarea className={textareaClass} value={pairsToLines(content.services.items, (item) => `${item.title}|${item.text}`)} onChange={(event) => updateContent({ services: { ...content.services, items: linesToServices(event.target.value) } })} />
-                  </label>
+	                  <div className="grid gap-3">
+	                    <div className="flex items-center justify-between gap-3">
+	                      <p className="text-sm text-[#cbc9c8]">Список услуг</p>
+	                      <button type="button" className="inline-flex min-h-9 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-xs text-[#cbc9c8]" onClick={addServiceItem}>
+	                        <Plus className="h-3.5 w-3.5" />
+	                        Добавить
+	                      </button>
+	                    </div>
+	                    {content.services.items.map((item, index) => (
+	                      <article key={`${item.title}-${index}`} className="grid gap-3 border border-[#e7e3e0]/12 bg-[#11100f] p-3">
+	                        <div className="flex items-center justify-between gap-3">
+	                          <span className="grid h-7 w-7 place-items-center bg-[#e7e3e0] text-xs font-bold text-[#080706]">{index + 1}</span>
+	                          <div className="flex gap-2">
+	                            <button type="button" className="grid h-8 w-8 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === 0} onClick={() => moveServiceItem(index, -1)}><ArrowUp className="h-3.5 w-3.5" /></button>
+	                            <button type="button" className="grid h-8 w-8 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === content.services.items.length - 1} onClick={() => moveServiceItem(index, 1)}><ArrowDown className="h-3.5 w-3.5" /></button>
+	                            <button type="button" className="grid h-8 w-8 place-items-center border border-[#e7b7a3]/35 text-[#e7b7a3]" onClick={() => removeServiceItem(index)}><Trash2 className="h-3.5 w-3.5" /></button>
+	                          </div>
+	                        </div>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">Название<input className={inputClass} value={item.title} onChange={(event) => updateServiceItem(index, { title: event.target.value })} /></label>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">Текст<textarea className={textareaClass} value={item.text} onChange={(event) => updateServiceItem(index, { text: event.target.value })} /></label>
+	                      </article>
+	                    ))}
+	                    <div className="border border-[#e7e3e0]/10 bg-[#080706]/50 p-4">
+	                      <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Превью</p>
+	                      <div className="mt-3 grid gap-2">
+	                        {content.services.items.slice(0, 4).map((item, index) => (
+	                          <div key={`${item.title}-preview-${index}`} className="grid gap-2 border-t border-[#e7e3e0]/10 pt-3 sm:grid-cols-[36px_1fr]">
+	                            <span className="text-sm text-[#a69c96]">{String(index + 1).padStart(2, "0")}</span>
+	                            <div>
+	                              <p className="serif text-2xl">{item.title || "Название услуги"}</p>
+	                              <p className="mt-1 text-sm leading-6 text-[#a69c96]">{item.text || "Описание услуги"}</p>
+	                            </div>
+	                          </div>
+	                        ))}
+	                      </div>
+	                    </div>
+	                  </div>
                 </div>
               </div>
 
@@ -1784,10 +1930,41 @@ export function AdminCRM() {
                     Описание
                     <textarea className={textareaClass} value={content.process.text} onChange={(event) => updateContent({ process: { ...content.process, text: event.target.value } })} />
                   </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Этапы, формат: название|текст
-                    <textarea className={textareaClass} value={pairsToLines(content.process.steps, (item) => `${item.title}|${item.text}`)} onChange={(event) => updateContent({ process: { ...content.process, steps: linesToProcessSteps(event.target.value) } })} />
-                  </label>
+	                  <div className="grid gap-3">
+	                    <div className="flex items-center justify-between gap-3">
+	                      <p className="text-sm text-[#cbc9c8]">Этапы</p>
+	                      <button type="button" className="inline-flex min-h-9 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-xs text-[#cbc9c8]" onClick={addProcessStep}>
+	                        <Plus className="h-3.5 w-3.5" />
+	                        Добавить
+	                      </button>
+	                    </div>
+	                    {content.process.steps.map((step, index) => (
+	                      <article key={`${step.title}-${index}`} className="grid gap-3 border border-[#e7e3e0]/12 bg-[#11100f] p-3">
+	                        <div className="flex items-center justify-between gap-3">
+	                          <span className="grid h-7 w-7 place-items-center bg-[#e7e3e0] text-xs font-bold text-[#080706]">{index + 1}</span>
+	                          <div className="flex gap-2">
+	                            <button type="button" className="grid h-8 w-8 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === 0} onClick={() => moveProcessStep(index, -1)}><ArrowUp className="h-3.5 w-3.5" /></button>
+	                            <button type="button" className="grid h-8 w-8 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === content.process.steps.length - 1} onClick={() => moveProcessStep(index, 1)}><ArrowDown className="h-3.5 w-3.5" /></button>
+	                            <button type="button" className="grid h-8 w-8 place-items-center border border-[#e7b7a3]/35 text-[#e7b7a3]" onClick={() => removeProcessStep(index)}><Trash2 className="h-3.5 w-3.5" /></button>
+	                          </div>
+	                        </div>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">Название этапа<input className={inputClass} value={step.title} onChange={(event) => updateProcessStep(index, { title: event.target.value })} /></label>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">Описание<textarea className={textareaClass} value={step.text} onChange={(event) => updateProcessStep(index, { text: event.target.value })} /></label>
+	                      </article>
+	                    ))}
+	                    <div className="border border-[#e7e3e0]/10 bg-[#080706]/50 p-4">
+	                      <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Превью</p>
+	                      <div className="mt-3 grid gap-2">
+	                        {content.process.steps.slice(0, 5).map((step, index) => (
+	                          <div key={`${step.title}-preview-${index}`} className="grid gap-2 border-l border-[#e7e3e0]/20 pl-4">
+	                            <p className="text-xs text-[#a69c96]">{String(index + 1).padStart(2, "0")}</p>
+	                            <p className="serif text-2xl">{step.title || "Название этапа"}</p>
+	                            <p className="text-sm leading-6 text-[#a69c96]">{step.text || "Описание этапа"}</p>
+	                          </div>
+	                        ))}
+	                      </div>
+	                    </div>
+	                  </div>
                 </div>
               </div>
 
@@ -1824,16 +2001,33 @@ export function AdminCRM() {
                     Заголовок
                     <textarea className={textareaClass} value={content.beforeAfter.title} onChange={(event) => updateContent({ beforeAfter: { ...content.beforeAfter, title: event.target.value } })} />
                   </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Картинка ДО URL
-                    <input className={`${inputClass} min-w-0 break-all`} value={content.beforeAfter.beforeImage} onChange={(event) => updateContent({ beforeAfter: { ...content.beforeAfter, beforeImage: event.target.value } })} />
-                  </label>
-                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
-                    Картинка ПОСЛЕ URL
-                    <input className={`${inputClass} min-w-0 break-all`} value={content.beforeAfter.afterImage} onChange={(event) => updateContent({ beforeAfter: { ...content.beforeAfter, afterImage: event.target.value } })} />
-                  </label>
-                </div>
-              </div>
+	                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                    <span className="flex items-center justify-between gap-3">
+	                      Картинка ДО URL
+	                      <button type="button" className="border border-[#e7e3e0]/18 px-2 py-1 text-xs text-[#cbc9c8]" onClick={() => openContentMediaPicker("beforeAfter.beforeImage")}>Выбрать</button>
+	                    </span>
+	                    <input className={`${inputClass} min-w-0 break-all`} value={content.beforeAfter.beforeImage} onChange={(event) => updateContent({ beforeAfter: { ...content.beforeAfter, beforeImage: event.target.value } })} />
+	                  </label>
+	                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                    <span className="flex items-center justify-between gap-3">
+	                      Картинка ПОСЛЕ URL
+	                      <button type="button" className="border border-[#e7e3e0]/18 px-2 py-1 text-xs text-[#cbc9c8]" onClick={() => openContentMediaPicker("beforeAfter.afterImage")}>Выбрать</button>
+	                    </span>
+	                    <input className={`${inputClass} min-w-0 break-all`} value={content.beforeAfter.afterImage} onChange={(event) => updateContent({ beforeAfter: { ...content.beforeAfter, afterImage: event.target.value } })} />
+	                  </label>
+	                  <div className="border border-[#e7e3e0]/10 bg-[#080706]/50 p-4">
+	                    <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Превью</p>
+	                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+	                      <div className={`aspect-video border border-[#e7e3e0]/12 bg-cover bg-center ${content.beforeAfter.beforeImage ? "" : "bg-[#181615]"}`} style={content.beforeAfter.beforeImage ? { backgroundImage: `url(${content.beforeAfter.beforeImage})` } : undefined}>
+	                        <span className="m-2 inline-block bg-[#080706]/75 px-2 py-1 text-xs uppercase tracking-[0.16em] text-[#e7e3e0]">До</span>
+	                      </div>
+	                      <div className={`aspect-video border border-[#e7e3e0]/12 bg-cover bg-center ${content.beforeAfter.afterImage ? "" : "bg-[#181615]"}`} style={content.beforeAfter.afterImage ? { backgroundImage: `url(${content.beforeAfter.afterImage})` } : undefined}>
+	                        <span className="m-2 inline-block bg-[#080706]/75 px-2 py-1 text-xs uppercase tracking-[0.16em] text-[#e7e3e0]">После</span>
+	                      </div>
+	                    </div>
+	                  </div>
+	                </div>
+	              </div>
 
 	              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
                 <h3 className="serif text-4xl">Контакты / форма</h3>
