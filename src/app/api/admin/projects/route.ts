@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { deleteProject, getAdminProjects, saveProject } from "@/lib/cms";
@@ -44,6 +45,9 @@ export async function POST(request: Request) {
   }
 
   const project = await saveProject(result.data);
+  revalidatePath("/");
+  revalidatePath("/sitemap.xml");
+  revalidatePath(`/projects/${project.slug}`);
   return NextResponse.json({ ok: true, project });
 }
 
@@ -59,5 +63,7 @@ export async function DELETE(request: Request) {
   }
 
   await deleteProject(id);
+  revalidatePath("/");
+  revalidatePath("/sitemap.xml");
   return NextResponse.json({ ok: true });
 }

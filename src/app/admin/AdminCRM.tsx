@@ -174,6 +174,7 @@ export function AdminCRM() {
   const [saving, setSaving] = useState(false);
   const [projectSaving, setProjectSaving] = useState(false);
   const [contentSaving, setContentSaving] = useState(false);
+  const [contentMessage, setContentMessage] = useState("");
   const [activeView, setActiveView] = useState<"leads" | "projects" | "content">("leads");
 
   const selectedLead = leads.find((lead) => lead.id === selectedId) ?? leads[0] ?? null;
@@ -383,6 +384,7 @@ export function AdminCRM() {
 
   const saveContent = async () => {
     setContentSaving(true);
+    setContentMessage("");
 
     const response = await fetch("/api/admin/content", {
       method: "POST",
@@ -393,6 +395,9 @@ export function AdminCRM() {
     if (response.ok) {
       const data = await response.json();
       setContent(data.content ?? content);
+      setContentMessage("Тексты сохранены. Обнови главную страницу.");
+    } else {
+      setContentMessage("Не удалось сохранить тексты. Проверь поля и попробуй еще раз.");
     }
 
     setContentSaving(false);
@@ -848,6 +853,7 @@ export function AdminCRM() {
                 </button>
               </div>
             </div>
+            {contentMessage ? <p className="mt-4 text-sm text-[#d7c4a3]">{contentMessage}</p> : null}
 
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
               <div className="grid gap-4">

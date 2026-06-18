@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getAdminSiteContent, saveSiteContent } from "@/lib/cms";
@@ -45,5 +46,6 @@ export async function POST(request: Request) {
   }
 
   const content = await saveSiteContent(result.data);
+  revalidatePath("/");
   return NextResponse.json({ ok: true, content });
 }
