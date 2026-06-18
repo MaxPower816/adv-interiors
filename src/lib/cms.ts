@@ -70,6 +70,19 @@ function projectToRow(project: ProjectPatch) {
   };
 }
 
+function withFallbackProjects(projects: Project[]) {
+  const cmsSlugs = new Set(projects.map((project) => project.slug));
+  const missingFallbackProjects = fallbackProjects
+    .filter((project) => !cmsSlugs.has(project.slug))
+    .map((project, index) => ({
+      ...project,
+      published: project.published ?? true,
+      sortOrder: project.sortOrder ?? projects.length + index,
+    }));
+
+  return [...projects, ...missingFallbackProjects];
+}
+
 export async function getPublishedProjects() {
   if (!hasSupabaseConfig()) return fallbackProjects;
 
@@ -85,8 +98,13 @@ export async function getPublishedProjects() {
 export async function getAdminProjects() {
   if (!hasSupabaseConfig()) return fallbackProjects;
 
-  const rows = await supabaseRequest<CmsProjectRow[]>("cms_projects?select=*&order=sort_order.asc,created_at.desc");
-  return rows.length ? rows.map(rowToProject) : fallbackProjects;
+  try {
+    const rows = await supabaseRequest<CmsProjectRow[]>("cms_projects?select=*&order=sort_order.asc,created_at.desc");
+    return withFallbackProjects(rows.map(rowToProject));
+  } catch (error) {
+    console.error("[cms admin projects fallback]", error);
+    return fallbackProjects;
+  }
 }
 
 export async function getProjectBySlug(slug: string) {
