@@ -17,6 +17,7 @@ import { VisualStyleProvider } from "@/components/ui/VisualStyleProvider";
 import { siteConfig } from "@/config/site";
 import { getPublishedProjects, getSiteContent } from "@/lib/cms";
 import { absoluteUrl } from "@/lib/url";
+import { isBlockEnabled } from "@/lib/visual-style";
 
 export const revalidate = 60;
 
@@ -51,6 +52,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Home() {
   const [content, publishedProjects] = await Promise.all([getSiteContent(), getPublishedProjects()]);
+  const blocks = content.visual.blocks;
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -94,17 +96,17 @@ export default async function Home() {
       <Header />
       <VisualStyleProvider visual={content.visual} />
       <main id="main">
-        <HeroSection hero={content.hero} visualStyle={content.visual.blocks.hero} />
-        <PortfolioSection />
-        <AboutSection about={content.about} visualStyle={content.visual.blocks.about} />
-        <ServicesSection services={content.services} visualStyle={content.visual.blocks.services} />
-        <ProcessSection process={content.process} visualStyle={content.visual.blocks.process} />
-        <SEOTextSection content={content.seoBlock} visualStyle={content.visual.blocks.seoBlock} />
-        <BeforeAfterSection beforeAfter={content.beforeAfter} visualStyle={content.visual.blocks.beforeAfter} />
-        <TestimonialsSection testimonials={content.testimonials} visualStyle={content.visual.blocks.testimonials} />
-        <PricingSection pricing={content.pricing} visualStyle={content.visual.blocks.pricing} />
-        <FAQSection faq={content.faq} visualStyle={content.visual.blocks.faq} />
-        <ContactSection contact={content.contact} pricingPlans={content.pricing.plans} visualStyle={content.visual.blocks.contact} />
+        {isBlockEnabled(blocks.hero) ? <HeroSection hero={content.hero} visualStyle={blocks.hero} /> : null}
+        {isBlockEnabled(blocks.portfolio) ? <PortfolioSection visualStyle={blocks.portfolio} /> : null}
+        {isBlockEnabled(blocks.about) ? <AboutSection about={content.about} visualStyle={blocks.about} /> : null}
+        {isBlockEnabled(blocks.services) ? <ServicesSection services={content.services} visualStyle={blocks.services} /> : null}
+        {isBlockEnabled(blocks.process) ? <ProcessSection process={content.process} visualStyle={blocks.process} /> : null}
+        {isBlockEnabled(blocks.seoBlock) ? <SEOTextSection content={content.seoBlock} visualStyle={blocks.seoBlock} /> : null}
+        {isBlockEnabled(blocks.beforeAfter) ? <BeforeAfterSection beforeAfter={content.beforeAfter} visualStyle={blocks.beforeAfter} /> : null}
+        {isBlockEnabled(blocks.testimonials) ? <TestimonialsSection testimonials={content.testimonials} visualStyle={blocks.testimonials} /> : null}
+        {isBlockEnabled(blocks.pricing) ? <PricingSection pricing={content.pricing} visualStyle={blocks.pricing} /> : null}
+        {isBlockEnabled(blocks.faq) ? <FAQSection faq={content.faq} visualStyle={blocks.faq} /> : null}
+        {isBlockEnabled(blocks.contact) ? <ContactSection contact={content.contact} pricingPlans={content.pricing.plans} visualStyle={blocks.contact} /> : null}
       </main>
       <Footer />
       <a href="#contact" className="fixed bottom-5 right-5 z-50 hidden border border-[#e7e3e0]/25 bg-[#080706]/75 px-4 py-3 text-xs uppercase tracking-[0.16em] backdrop-blur md:block">

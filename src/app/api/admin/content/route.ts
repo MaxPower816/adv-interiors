@@ -43,6 +43,8 @@ const pricePlanSchema = z.object({
 });
 
 const visualBlockStyleSchema = z.object({
+  enabled: z.boolean(),
+  textRole: z.enum(["description", "title"]),
   titleSize: z.string().max(80),
   textSize: z.string().max(80),
   titleColor: z.string().max(80),

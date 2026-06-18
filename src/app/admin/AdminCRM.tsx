@@ -124,6 +124,7 @@ const emptyContent: SiteContent = {
 
 const visualPreviewCopy: Record<SiteVisualBlockKey, { eyebrow: string; title: string; text: string }> = {
   hero: { eyebrow: "Главный экран", title: "Дизайн интерьера [[под ключ]]", text: "Премиальный сайт сразу показывает, как будет выглядеть выбранный стиль." },
+  portfolio: { eyebrow: "Портфолио", title: "Пространства, которые стали жизнью", text: "Карточки проектов остаются ниже, а этот блок можно включать и выключать." },
   about: { eyebrow: "О студии", title: "Философия пространства", text: "Описание блока меняется вместе с размером, цветом и выбранным шрифтом." },
   services: { eyebrow: "Услуги", title: "Концепция и реализация", text: "Можно отдельно менять вид заголовков и описаний в этом блоке." },
   process: { eyebrow: "Процесс", title: "От брифа до реализации", text: "Настройки применяются только к выбранной секции." },
@@ -302,9 +303,10 @@ function VisualLivePreview({ blockKey, style }: { blockKey: SiteVisualBlockKey; 
 
   return (
     <div
-      className="min-h-60 border border-[#e7e3e0]/12 bg-[#080706] p-5"
+      className={`min-h-60 border border-[#e7e3e0]/12 bg-[#080706] p-5 ${style.enabled === false ? "opacity-35" : ""}`}
       style={style.backgroundColor ? { backgroundColor: style.backgroundColor } : undefined}
     >
+      {style.enabled === false ? <p className="mb-3 text-xs uppercase tracking-[0.18em] text-[#e7b7a3]">Блок выключен</p> : null}
       <p className="text-xs uppercase tracking-[0.22em] text-[#a69c96]" style={style.accentColor ? { color: style.accentColor } : undefined}>
         {preview.eyebrow}
       </p>
@@ -1788,6 +1790,21 @@ export function AdminCRM() {
 	                      </div>
 
 	                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+	                        <label className="flex min-h-11 items-center justify-between gap-3 border border-[#e7e3e0]/15 bg-[#080706]/70 px-3 text-sm text-[#cbc9c8] md:col-span-2">
+	                          <span>Показывать блок на сайте</span>
+	                          <input
+	                            type="checkbox"
+	                            checked={style.enabled !== false}
+	                            onChange={(event) => updateVisualBlock(blockKey, { enabled: event.target.checked })}
+	                          />
+	                        </label>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8] md:col-span-2">
+	                          Описание выглядит как
+	                          <select className={inputClass} value={style.textRole} onChange={(event) => updateVisualBlock(blockKey, { textRole: event.target.value as SiteVisualBlockStyle["textRole"] })}>
+	                            <option value="description">Описание</option>
+	                            <option value="title">Заголовок</option>
+	                          </select>
+	                        </label>
 	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">
 	                          Размер заголовка
 	                          <input className={inputClass} value={style.titleSize} onChange={(event) => updateVisualBlock(blockKey, { titleSize: event.target.value })} placeholder="например 64px или clamp(3rem, 7vw, 6rem)" />

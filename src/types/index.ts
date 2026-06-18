@@ -81,6 +81,7 @@ export type SiteContact = {
 
 export type SiteVisualBlockKey =
   | "hero"
+  | "portfolio"
   | "about"
   | "services"
   | "process"
@@ -92,6 +93,8 @@ export type SiteVisualBlockKey =
   | "contact";
 
 export type SiteVisualBlockStyle = {
+  enabled: boolean;
+  textRole: "description" | "title";
   titleSize: string;
   textSize: string;
   titleColor: string;

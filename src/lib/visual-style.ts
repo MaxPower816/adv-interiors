@@ -3,6 +3,7 @@ import type { SiteVisualBlockKey, SiteVisualBlockStyle, SiteVisualSettings } fro
 
 export const visualBlockLabels: Record<SiteVisualBlockKey, string> = {
   hero: "Главный экран",
+  portfolio: "Портфолио",
   about: "О студии",
   services: "Услуги",
   process: "Процесс",
@@ -17,6 +18,8 @@ export const visualBlockLabels: Record<SiteVisualBlockKey, string> = {
 export const visualBlockKeys = Object.keys(visualBlockLabels) as SiteVisualBlockKey[];
 
 export const defaultVisualBlockStyle: SiteVisualBlockStyle = {
+  enabled: true,
+  textRole: "description",
   titleSize: "",
   textSize: "",
   titleColor: "",
@@ -64,9 +67,20 @@ export function titleStyle(style?: SiteVisualBlockStyle): CSSProperties | undefi
 
 export function textStyle(style?: SiteVisualBlockStyle): CSSProperties | undefined {
   const result: CSSProperties = {};
+  if (style?.textRole === "title") {
+    result.fontFamily = "var(--font-heading)";
+    result.fontWeight = 600;
+    result.lineHeight = 1.05;
+    if (style.titleSize) result.fontSize = style.titleSize;
+    if (style.titleColor) result.color = style.titleColor;
+  }
   if (style?.textSize) result.fontSize = style.textSize;
   if (style?.textColor) result.color = style.textColor;
   return Object.keys(result).length ? result : undefined;
+}
+
+export function isBlockEnabled(style?: SiteVisualBlockStyle) {
+  return style?.enabled !== false;
 }
 
 export function accentStyle(style?: SiteVisualBlockStyle): CSSProperties | undefined {
