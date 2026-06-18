@@ -1,15 +1,19 @@
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-function getSupabaseRestUrl(path: string) {
+export function getSupabaseBaseUrl() {
   if (!SUPABASE_URL) {
     throw new Error("Supabase URL is not configured.");
   }
 
-  const baseUrl = SUPABASE_URL
+  return SUPABASE_URL
     .trim()
     .replace(/\/rest\/v1\/?$/, "")
     .replace(/\/$/, "");
+}
+
+function getSupabaseRestUrl(path: string) {
+  const baseUrl = getSupabaseBaseUrl();
 
   return `${baseUrl}/rest/v1/${path}`;
 }
