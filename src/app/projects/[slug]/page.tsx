@@ -9,9 +9,14 @@ import { ProjectGallery } from "@/components/portfolio/ProjectGallery";
 import { siteConfig } from "@/config/site";
 import { projects } from "@/content/projects";
 import { getProjectBySlug, getPublishedProjects } from "@/lib/cms";
+import { absoluteUrl } from "@/lib/url";
+
+export const revalidate = 60;
 
 export async function generateStaticParams() {
-  return projects.map((project) => ({ slug: project.slug }));
+  const publishedProjects = await getPublishedProjects();
+  const slugs = new Set([...projects, ...publishedProjects].map((project) => project.slug));
+  return Array.from(slugs).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -24,7 +29,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const title = project.seoTitle || `${project.title}: дизайн интерьера ${project.type.toLowerCase()} ${project.area}`;
   const description = project.seoDescription || `${project.description} Проект ${project.type.toLowerCase()} ${project.area}, ${project.city}: ${project.works.join(", ")}.`;
-  const url = `${siteConfig.url}/projects/${project.slug}`;
+  const url = absoluteUrl(`/projects/${project.slug}`);
+  const image = absoluteUrl(project.cover);
 
   return {
     title,
@@ -37,13 +43,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       siteName: siteConfig.name,
       type: "article",
       locale: "ru_RU",
-      images: [{ url: project.cover, alt: project.title }],
+      images: [{ url: image, alt: project.title }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [project.cover],
+      images: [image],
     },
   };
 }
@@ -64,8 +70,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     "@type": "CreativeWork",
     name: project.title,
     description: project.description,
-    url: `${siteConfig.url}/projects/${project.slug}`,
-    image: `${siteConfig.url}${project.cover}`,
+    url: absoluteUrl(`/projects/${project.slug}`),
+    image: absoluteUrl(project.cover),
     creator: {
       "@type": "Organization",
       name: siteConfig.name,
@@ -73,6 +79,15 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     },
     about: `Дизайн интерьера: ${project.type}, ${project.area}, ${project.city}`,
     keywords: project.works.join(", "),
+  };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: siteConfig.name, item: siteConfig.url },
+      { "@type": "ListItem", position: 2, name: "Портфолио", item: absoluteUrl("/#portfolio") },
+      { "@type": "ListItem", position: 3, name: project.title, item: absoluteUrl(`/projects/${project.slug}`) },
+    ],
   };
 
   return (
@@ -122,6 +137,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       </main>
       <Footer />
       <Script id={`project-schema-${project.slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(projectJsonLd) }} />
+      <Script id={`project-breadcrumb-schema-${project.slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
     </>
   );
 }

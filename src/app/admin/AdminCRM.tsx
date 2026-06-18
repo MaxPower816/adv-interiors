@@ -34,8 +34,9 @@ const statusClasses: Record<LeadStatus, string> = {
 
 const pipelineStatuses: LeadStatus[] = ["new", "contact", "brief-scheduled", "brief-done", "proposal", "thinking", "contract", "refused", "closed"];
 
-const inputClass = "min-h-11 w-full border border-[#e7e3e0]/15 bg-[#080706]/70 px-3 text-sm text-[#e7e3e0] outline-none focus:border-[#e7e3e0]/55";
+const inputClass = "min-h-11 w-full min-w-0 border border-[#e7e3e0]/15 bg-[#080706]/70 px-3 text-sm text-[#e7e3e0] outline-none focus:border-[#e7e3e0]/55";
 const textareaClass = `${inputClass} min-h-28 py-3`;
+const fileInputClass = `${inputClass} overflow-hidden text-ellipsis file:mr-3 file:border-0 file:bg-[#e7e3e0] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[#080706]`;
 type ContentMediaTarget = "about.image" | "seo.ogImage" | "beforeAfter.beforeImage" | "beforeAfter.afterImage" | "pricing.backgroundImage";
 
 const eventLabels: Record<string, string> = {
@@ -898,7 +899,7 @@ export function AdminCRM() {
         </div>
       </header>
 
-      <nav className="mt-5 flex gap-2 border-b border-[#e7e3e0]/12 pb-3">
+      <nav className="mt-5 flex gap-2 overflow-x-auto border-b border-[#e7e3e0]/12 pb-3 dark-scrollbar">
         {([
           ["leads", "Заявки"],
 	          ["projects", "Проекты"],
@@ -910,7 +911,7 @@ export function AdminCRM() {
 	        ] as const).map(([value, label]) => (
           <button
             key={value}
-            className={`min-h-10 border px-4 text-sm ${activeView === value ? "border-[#e7e3e0] bg-[#e7e3e0] text-[#080706]" : "border-[#e7e3e0]/15 text-[#cbc9c8]"}`}
+            className={`min-h-10 shrink-0 border px-4 text-sm ${activeView === value ? "border-[#e7e3e0] bg-[#e7e3e0] text-[#080706]" : "border-[#e7e3e0]/15 text-[#cbc9c8]"}`}
             onClick={() => setActiveView(value)}
           >
             {label}
@@ -1042,7 +1043,7 @@ export function AdminCRM() {
                 <label className="grid gap-2 text-sm text-[#cbc9c8]">
                   Следующее действие
                   <input
-                    className={inputClass}
+                    className={fileInputClass}
                     value={selectedLead.nextAction || ""}
                     onChange={(event) => setLeads((items) => items.map((item) => (item.id === selectedLead.id ? { ...item, nextAction: event.target.value } : item)))}
                     onBlur={(event) => updateSelectedLead({ nextAction: event.target.value })}

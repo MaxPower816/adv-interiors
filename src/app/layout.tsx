@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
@@ -45,7 +45,15 @@ export const metadata: Metadata = {
     description: siteConfig.description,
   },
   icons: { icon: "/favicon.svg" },
+  manifest: "/manifest.webmanifest",
   category: "interior design",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#080706",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

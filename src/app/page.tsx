@@ -14,13 +14,16 @@ import { SEOTextSection } from "@/components/sections/SEOTextSection";
 import { ServicesSection } from "@/components/sections/ServicesSection";
 import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import { siteConfig } from "@/config/site";
-import { getSiteContent } from "@/lib/cms";
+import { getPublishedProjects, getSiteContent } from "@/lib/cms";
+import { absoluteUrl } from "@/lib/url";
+
+export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getSiteContent();
   const title = content.seo.title;
   const description = content.seo.description;
-  const image = content.seo.ogImage || "/images/interior-placeholder.svg";
+  const image = absoluteUrl(content.seo.ogImage || "/images/interior-placeholder.svg");
 
   return {
     title,
@@ -46,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const content = await getSiteContent();
+  const [content, publishedProjects] = await Promise.all([getSiteContent(), getPublishedProjects()]);
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -72,6 +75,18 @@ export default async function Home() {
       },
     ],
   };
+  const portfolioJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Портфолио ADV INTERIORS",
+    itemListElement: publishedProjects.map((project, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: absoluteUrl(`/projects/${project.slug}`),
+      name: project.title,
+      image: absoluteUrl(project.cover),
+    })),
+  };
 
   return (
     <>
@@ -95,6 +110,7 @@ export default async function Home() {
       </a>
       <Script id="faq-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <Script id="breadcrumb-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <Script id="portfolio-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(portfolioJsonLd) }} />
     </>
   );
 }

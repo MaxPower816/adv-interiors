@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "@/config/site";
 import { getPublishedProjects } from "@/lib/cms";
+import { absoluteUrl } from "@/lib/url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -9,7 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: siteConfig.url, lastModified: now, changeFrequency: "weekly", priority: 1 },
     ...projects.map((project) => ({
-      url: `${siteConfig.url}/projects/${project.slug}`,
+      url: absoluteUrl(`/projects/${project.slug}`),
       lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.75,
