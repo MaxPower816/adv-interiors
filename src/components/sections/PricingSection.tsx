@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { trackEvent } from "@/lib/utils";
-import type { SiteContent } from "@/types";
+import { sectionStyle, textStyle, titleStyle } from "@/lib/visual-style";
+import type { SiteContent, SiteVisualBlockStyle } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { StyledText } from "@/components/ui/StyledText";
 
-export function PricingSection({ pricing }: { pricing: SiteContent["pricing"] }) {
+export function PricingSection({ pricing, visualStyle }: { pricing: SiteContent["pricing"]; visualStyle?: SiteVisualBlockStyle }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeType = pricing.objectTypes[activeIndex] ?? pricing.objectTypes[0];
 
@@ -14,11 +16,11 @@ export function PricingSection({ pricing }: { pricing: SiteContent["pricing"] })
     <section
       id="pricing"
       className={`section bg-cover bg-center ${pricing.backgroundImage ? "" : "image-surface"}`}
-      style={pricing.backgroundImage ? { backgroundImage: `url(${pricing.backgroundImage})` } : undefined}
+      style={{ ...(pricing.backgroundImage ? { backgroundImage: `url(${pricing.backgroundImage})` } : {}), ...(sectionStyle(visualStyle) ?? {}) }}
     >
       <div className="absolute inset-0 bg-[#050505]/60" />
       <div className="container relative">
-        <SectionHeading eyebrow={pricing.eyebrow} title={pricing.title} text={`${activeType?.note ?? ""} Минимальная стоимость проекта — ${activeType?.min ?? ""}.`} />
+        <SectionHeading eyebrow={pricing.eyebrow} title={pricing.title} text={`${activeType?.note ?? ""} Минимальная стоимость проекта — ${activeType?.min ?? ""}.`} visualStyle={visualStyle} />
         <div className="mt-8 flex flex-wrap gap-2">
           {pricing.objectTypes.map((item, index) => (
             <button key={item.key || item.label} className={`min-h-11 border px-4 text-sm ${activeIndex === index ? "bg-[#e7e3e0] text-[#080706]" : "border-[#e7e3e0]/20"}`} onClick={() => setActiveIndex(index)}>
@@ -29,11 +31,11 @@ export function PricingSection({ pricing }: { pricing: SiteContent["pricing"] })
         <div className="mt-12 grid gap-px overflow-hidden border border-[#e7e3e0]/15 bg-[#e7e3e0]/15 md:grid-cols-4">
           {pricing.plans.map((plan) => (
             <article key={plan.id} className="bg-[#080706]/80 p-6 backdrop-blur">
-              <h3 className="serif text-4xl">{plan.title}</h3>
-              <p className="mt-5 text-xl">{plan.price}</p>
+              <h3 className="serif text-4xl" style={titleStyle(visualStyle)}><StyledText text={plan.title} visualStyle={visualStyle} /></h3>
+              <p className="mt-5 text-xl" style={textStyle(visualStyle)}>{plan.price}</p>
               <p className="mt-2 text-sm text-[#a69c96]">{plan.duration}</p>
               <ul className="mt-6 grid gap-3 text-sm leading-6 text-[#cbc9c8]">
-                {plan.features.map((feature) => <li key={feature}>— {feature}</li>)}
+                {plan.features.map((feature) => <li key={feature}>— <StyledText text={feature} visualStyle={visualStyle} /></li>)}
               </ul>
               <Button className="mt-8 w-full" onClick={() => {
                 trackEvent("price_select", { plan: plan.title });

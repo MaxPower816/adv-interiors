@@ -42,6 +42,17 @@ const pricePlanSchema = z.object({
   features: z.array(z.string().min(1).max(220)).max(20),
 });
 
+const visualBlockStyleSchema = z.object({
+  titleSize: z.string().max(80),
+  textSize: z.string().max(80),
+  titleColor: z.string().max(80),
+  textColor: z.string().max(80),
+  backgroundColor: z.string().max(80),
+  accentColor: z.string().max(80),
+  highlightColor: z.string().max(80),
+  highlightBackground: z.string().max(80),
+});
+
 const siteContentSchema = z.object({
   hero: z.object({
     eyebrow: z.string().max(160),
@@ -109,6 +120,11 @@ const siteContentSchema = z.object({
     text: z.string().min(1).max(600),
     successTitle: z.string().min(1).max(160),
     successText: z.string().min(1).max(500),
+  }),
+  visual: z.object({
+    headingFontUrl: z.string().max(800),
+    bodyFontUrl: z.string().max(800),
+    blocks: z.record(z.string(), visualBlockStyleSchema),
   }),
 });
 

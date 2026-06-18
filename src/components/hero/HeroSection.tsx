@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import type { SiteContent } from "@/types";
+import type { SiteContent, SiteVisualBlockStyle } from "@/types";
 import { SceneFallback } from "./SceneFallback";
 
 const RoomExperience = dynamic(() => import("./RoomExperience").then((mod) => mod.RoomExperience), {
@@ -10,10 +10,10 @@ const RoomExperience = dynamic(() => import("./RoomExperience").then((mod) => mo
   loading: () => <SceneFallback />,
 });
 
-export function HeroSection({ hero }: { hero: SiteContent["hero"] }) {
+export function HeroSection({ hero, visualStyle }: { hero: SiteContent["hero"]; visualStyle?: SiteVisualBlockStyle }) {
   return (
     <Suspense fallback={<SceneFallback />}>
-      <RoomExperience hero={hero} />
+      <RoomExperience hero={hero} visualStyle={visualStyle} />
     </Suspense>
   );
 }

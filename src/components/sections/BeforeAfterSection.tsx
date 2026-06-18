@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import type { SiteContent } from "@/types";
+import { sectionStyle } from "@/lib/visual-style";
+import type { SiteContent, SiteVisualBlockStyle } from "@/types";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
-export function BeforeAfterSection({ beforeAfter }: { beforeAfter: SiteContent["beforeAfter"] }) {
+export function BeforeAfterSection({ beforeAfter, visualStyle }: { beforeAfter: SiteContent["beforeAfter"]; visualStyle?: SiteVisualBlockStyle }) {
   const [value, setValue] = useState(52);
 
   return (
-    <section className="section bg-[#0b0a09]">
+    <section className="section bg-[#0b0a09]" style={sectionStyle(visualStyle)}>
       <div className="container">
-        <SectionHeading eyebrow={beforeAfter.eyebrow} title={beforeAfter.title} />
+        <SectionHeading eyebrow={beforeAfter.eyebrow} title={beforeAfter.title} visualStyle={visualStyle} />
         <div className="relative mt-12 aspect-[16/9] overflow-hidden border border-[#e7e3e0]/12" onPointerMove={(event) => {
           if (event.buttons !== 1) return;
           const rect = event.currentTarget.getBoundingClientRect();

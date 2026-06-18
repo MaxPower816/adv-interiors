@@ -13,6 +13,7 @@ import { ProcessSection } from "@/components/sections/ProcessSection";
 import { SEOTextSection } from "@/components/sections/SEOTextSection";
 import { ServicesSection } from "@/components/sections/ServicesSection";
 import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
+import { VisualStyleProvider } from "@/components/ui/VisualStyleProvider";
 import { siteConfig } from "@/config/site";
 import { getPublishedProjects, getSiteContent } from "@/lib/cms";
 import { absoluteUrl } from "@/lib/url";
@@ -91,18 +92,19 @@ export default async function Home() {
   return (
     <>
       <Header />
+      <VisualStyleProvider visual={content.visual} />
       <main id="main">
-        <HeroSection hero={content.hero} />
+        <HeroSection hero={content.hero} visualStyle={content.visual.blocks.hero} />
         <PortfolioSection />
-        <AboutSection about={content.about} />
-        <ServicesSection services={content.services} />
-        <ProcessSection process={content.process} />
-        <SEOTextSection content={content.seoBlock} />
-        <BeforeAfterSection beforeAfter={content.beforeAfter} />
-        <TestimonialsSection testimonials={content.testimonials} />
-        <PricingSection pricing={content.pricing} />
-        <FAQSection faq={content.faq} />
-        <ContactSection contact={content.contact} pricingPlans={content.pricing.plans} />
+        <AboutSection about={content.about} visualStyle={content.visual.blocks.about} />
+        <ServicesSection services={content.services} visualStyle={content.visual.blocks.services} />
+        <ProcessSection process={content.process} visualStyle={content.visual.blocks.process} />
+        <SEOTextSection content={content.seoBlock} visualStyle={content.visual.blocks.seoBlock} />
+        <BeforeAfterSection beforeAfter={content.beforeAfter} visualStyle={content.visual.blocks.beforeAfter} />
+        <TestimonialsSection testimonials={content.testimonials} visualStyle={content.visual.blocks.testimonials} />
+        <PricingSection pricing={content.pricing} visualStyle={content.visual.blocks.pricing} />
+        <FAQSection faq={content.faq} visualStyle={content.visual.blocks.faq} />
+        <ContactSection contact={content.contact} pricingPlans={content.pricing.plans} visualStyle={content.visual.blocks.contact} />
       </main>
       <Footer />
       <a href="#contact" className="fixed bottom-5 right-5 z-50 hidden border border-[#e7e3e0]/25 bg-[#080706]/75 px-4 py-3 text-xs uppercase tracking-[0.16em] backdrop-blur md:block">

@@ -25,12 +25,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "Файл не выбран." }, { status: 400 });
     }
 
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ ok: false, message: "Можно загружать только изображения." }, { status: 400 });
+    const isImage = file.type.startsWith("image/");
+    const isFont = /\.(otf|ttf|woff|woff2)$/i.test(file.name);
+
+    if (!isImage && !isFont) {
+      return NextResponse.json({ ok: false, message: "Можно загружать изображения и шрифты .otf, .ttf, .woff, .woff2." }, { status: 400 });
     }
 
     if (file.size > 8 * 1024 * 1024) {
-      return NextResponse.json({ ok: false, message: "Файл слишком тяжелый. Выберите картинку до 8 МБ или сожмите ее." }, { status: 413 });
+      return NextResponse.json({ ok: false, message: "Файл слишком тяжелый. Выберите файл до 8 МБ." }, { status: 413 });
     }
 
     const media = await uploadMediaFile(file, { title, alt });
@@ -41,7 +44,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: false,
-      message: `Не удалось загрузить картинку: ${message}`,
+      message: `Не удалось загрузить файл: ${message}`,
     }, { status: 500 });
   }
 }

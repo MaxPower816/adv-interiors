@@ -98,7 +98,7 @@ export async function uploadMediaFile(file: File, input: { title: string; alt: s
     title: input.title || fileName,
     url: getPublicStorageUrl(path),
     alt: input.alt || input.title || fileName,
-    kind: "image",
+    kind: file.type.startsWith("image/") ? "image" : "font",
     sizeBytes: file.size,
   });
 }

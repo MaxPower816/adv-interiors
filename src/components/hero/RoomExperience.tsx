@@ -7,8 +7,10 @@ import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cameraPath } from "@/config/camera-path";
 import { trackEvent } from "@/lib/utils";
-import type { SiteContent } from "@/types";
+import { accentStyle, sectionStyle, textStyle, titleStyle } from "@/lib/visual-style";
+import type { SiteContent, SiteVisualBlockStyle } from "@/types";
 import { MagneticButton } from "@/components/ui/MagneticButton";
+import { StyledText } from "@/components/ui/StyledText";
 import { RoomCanvas } from "./RoomCanvas";
 import { SceneFallback } from "./SceneFallback";
 import { StageText } from "./StageText";
@@ -27,7 +29,7 @@ function hasWebGL() {
   }
 }
 
-export function RoomExperience({ hero }: { hero: SiteContent["hero"] }) {
+export function RoomExperience({ hero, visualStyle }: { hero: SiteContent["hero"]; visualStyle?: SiteVisualBlockStyle }) {
   const sectionRef = useRef<HTMLElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
   const scrollLockRef = useRef(false);
@@ -128,16 +130,20 @@ export function RoomExperience({ hero }: { hero: SiteContent["hero"] }) {
   }, [reduced]);
 
   return (
-    <section ref={sectionRef} className="relative min-h-[620vh] bg-[#080706] max-md:min-h-[420vh]" aria-label="Преображение интерьера">
+    <section ref={sectionRef} className="relative min-h-[620vh] bg-[#080706] max-md:min-h-[420vh]" style={sectionStyle(visualStyle)} aria-label="Преображение интерьера">
       <div className="sticky top-0 h-screen overflow-hidden">
         {webgl && !reduced ? <RoomCanvas progress={progress} /> : <SceneFallback />}
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(28,23,20,.62),transparent_45%,rgba(28,23,20,.25))]" />
         <div className="pointer-events-none absolute inset-0 flex items-center px-5 md:px-10">
           {progress < 0.08 ? (
             <div className="max-w-3xl">
-              <p className="mb-5 text-xs uppercase tracking-[0.3em] text-[#a69c96]">{hero.eyebrow}</p>
-              <h1 className="serif whitespace-pre-line text-[clamp(3.3rem,9vw,8rem)] font-medium leading-[0.9]">{hero.title}</h1>
-              <p className="mt-7 max-w-xl text-lg leading-8 text-[#cbc9c8]">{hero.subtitle}</p>
+              <p className="mb-5 text-xs uppercase tracking-[0.3em] text-[#a69c96]" style={accentStyle(visualStyle)}>{hero.eyebrow}</p>
+              <h1 className="serif whitespace-pre-line text-[clamp(3.3rem,9vw,8rem)] font-medium leading-[0.9]" style={titleStyle(visualStyle)}>
+                <StyledText text={hero.title} visualStyle={visualStyle} />
+              </h1>
+              <p className="mt-7 max-w-xl text-lg leading-8 text-[#cbc9c8]" style={textStyle(visualStyle)}>
+                <StyledText text={hero.subtitle} visualStyle={visualStyle} />
+              </p>
               <MagneticButton className="pointer-events-auto mt-9" onClick={() => {
                 trackEvent("hero_cta_click");
                 sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -146,7 +152,7 @@ export function RoomExperience({ hero }: { hero: SiteContent["hero"] }) {
               </MagneticButton>
             </div>
           ) : (
-            <StageText progress={progress} finalCta={hero.finalCta} />
+            <StageText progress={progress} finalCta={hero.finalCta} visualStyle={visualStyle} />
           )}
         </div>
         <div className="pointer-events-none absolute bottom-7 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-xs uppercase tracking-[0.22em] text-[#cbc9c8]">

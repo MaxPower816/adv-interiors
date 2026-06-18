@@ -2,7 +2,8 @@
 
 import { ArrowDown, ArrowUp, Copy, LogOut, Plus, RefreshCw, Search, ShieldCheck, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { ActivityEvent, Lead, LeadStatus, MediaItem, Project, SiteContent } from "@/types";
+import { defaultVisualBlockStyle, defaultVisualSettings, titleStyle, textStyle, visualBlockKeys, visualBlockLabels } from "@/lib/visual-style";
+import type { ActivityEvent, Lead, LeadStatus, MediaItem, Project, SiteContent, SiteVisualBlockKey, SiteVisualBlockStyle } from "@/types";
 
 const statusLabels: Record<LeadStatus, string> = {
   new: "Новая",
@@ -118,6 +119,20 @@ const emptyContent: SiteContent = {
     successTitle: "",
     successText: "",
   },
+  visual: defaultVisualSettings,
+};
+
+const visualPreviewCopy: Record<SiteVisualBlockKey, { eyebrow: string; title: string; text: string }> = {
+  hero: { eyebrow: "Главный экран", title: "Дизайн интерьера [[под ключ]]", text: "Премиальный сайт сразу показывает, как будет выглядеть выбранный стиль." },
+  about: { eyebrow: "О студии", title: "Философия пространства", text: "Описание блока меняется вместе с размером, цветом и выбранным шрифтом." },
+  services: { eyebrow: "Услуги", title: "Концепция и реализация", text: "Можно отдельно менять вид заголовков и описаний в этом блоке." },
+  process: { eyebrow: "Процесс", title: "От брифа до реализации", text: "Настройки применяются только к выбранной секции." },
+  seoBlock: { eyebrow: "SEO-блок", title: "Дизайн квартир в Москве", text: "Текстовый блок можно визуально усилить без правки кода." },
+  beforeAfter: { eyebrow: "До / после", title: "Преображение пространства", text: "Фон блока, акценты и выделения настраиваются отдельно." },
+  testimonials: { eyebrow: "Отзывы", title: "Клиенты говорят о результате", text: "Живой пример помогает увидеть итог до сохранения." },
+  pricing: { eyebrow: "Прайс", title: "PRICE LIST", text: "Цена, тарифы и описание могут иметь свой визуальный характер." },
+  faq: { eyebrow: "FAQ", title: "Частые вопросы", text: "Ответы должны оставаться читаемыми на любом фоне." },
+  contact: { eyebrow: "Контакты", title: "Давайте обсудим проект", text: "Финальный блок должен быть заметным и спокойным." },
 };
 
 function formatDate(value: string) {
@@ -228,6 +243,10 @@ function arrayToComma(value: string[]) {
 }
 
 async function compressImageForUpload(file: File) {
+  if (!file.type.startsWith("image/")) {
+    return file;
+  }
+
   if (file.type === "image/gif" || file.type === "image/webp" && file.size < 3 * 1024 * 1024) {
     return file;
   }
@@ -278,6 +297,34 @@ function SeoCounter({ value, ideal, max }: { value: string; ideal: string; max: 
   );
 }
 
+function VisualLivePreview({ blockKey, style }: { blockKey: SiteVisualBlockKey; style: SiteVisualBlockStyle }) {
+  const preview = visualPreviewCopy[blockKey];
+
+  return (
+    <div
+      className="min-h-60 border border-[#e7e3e0]/12 bg-[#080706] p-5"
+      style={style.backgroundColor ? { backgroundColor: style.backgroundColor } : undefined}
+    >
+      <p className="text-xs uppercase tracking-[0.22em] text-[#a69c96]" style={style.accentColor ? { color: style.accentColor } : undefined}>
+        {preview.eyebrow}
+      </p>
+      <h3 className="serif mt-4 whitespace-pre-line text-4xl leading-none text-[#e7e3e0]" style={titleStyle(style)}>
+        <span>{preview.title.split("[[")[0]}</span>
+        <span
+          style={{
+            color: style.highlightColor || undefined,
+            backgroundColor: style.highlightBackground || undefined,
+            padding: style.highlightBackground ? "0 0.12em" : undefined,
+          }}
+        >
+          под ключ
+        </span>
+      </h3>
+      <p className="mt-5 max-w-md text-sm leading-7 text-[#cbc9c8]" style={textStyle(style)}>{preview.text}</p>
+    </div>
+  );
+}
+
 export function AdminCRM() {
   const [authenticated, setAuthenticated] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -304,7 +351,7 @@ export function AdminCRM() {
   const [mediaMessage, setMediaMessage] = useState("");
   const [mediaPickerTarget, setMediaPickerTarget] = useState<"cover" | "layout" | "gallery" | null>(null);
   const [contentMediaTarget, setContentMediaTarget] = useState<ContentMediaTarget | null>(null);
-  const [activeView, setActiveView] = useState<"leads" | "projects" | "content" | "media" | "testimonials" | "pricing" | "faq">("leads");
+  const [activeView, setActiveView] = useState<"leads" | "projects" | "content" | "media" | "testimonials" | "pricing" | "faq" | "visual">("leads");
 
   const selectedLead = leads.find((lead) => lead.id === selectedId) ?? leads[0] ?? null;
   const selectedProject = projects.find((project) => (project.id || project.slug) === selectedProjectId) ?? projects[0] ?? null;
@@ -543,6 +590,29 @@ export function AdminCRM() {
 
   const updateContent = (patch: Partial<SiteContent>) => {
     setContent((current) => ({ ...current, ...patch }));
+  };
+
+  const updateVisualFonts = (patch: Partial<SiteContent["visual"]>) => {
+    updateContent({ visual: { ...content.visual, ...patch } });
+  };
+
+  const updateVisualBlock = (blockKey: SiteVisualBlockKey, patch: Partial<SiteVisualBlockStyle>) => {
+    updateContent({
+      visual: {
+        ...content.visual,
+        blocks: {
+          ...content.visual.blocks,
+          [blockKey]: {
+            ...(content.visual.blocks[blockKey] ?? defaultVisualBlockStyle),
+            ...patch,
+          },
+        },
+      },
+    });
+  };
+
+  const resetVisualBlock = (blockKey: SiteVisualBlockKey) => {
+    updateVisualBlock(blockKey, defaultVisualBlockStyle);
   };
 
   const saveContent = async () => {
@@ -904,10 +974,11 @@ export function AdminCRM() {
           ["leads", "Заявки"],
 	          ["projects", "Проекты"],
 	          ["content", "Тексты"],
-	          ["media", "Медиа"],
+          ["media", "Медиа"],
 	          ["testimonials", "Отзывы"],
 	          ["pricing", "Прайс"],
 	          ["faq", "FAQ"],
+	          ["visual", "Шрифт"],
 	        ] as const).map(([value, label]) => (
           <button
             key={value}
@@ -1053,7 +1124,7 @@ export function AdminCRM() {
                 <label className="grid gap-2 text-sm text-[#cbc9c8]">
                   Дата действия
                   <input
-                    className={inputClass}
+                    className={fileInputClass}
                     type="datetime-local"
                     value={selectedLead.nextActionAt || ""}
                     onChange={(event) => setLeads((items) => items.map((item) => (item.id === selectedLead.id ? { ...item, nextActionAt: event.target.value } : item)))}
@@ -1668,6 +1739,100 @@ export function AdminCRM() {
 	            </div>
 	          </div>
 	        </section>
+	      ) : activeView === "visual" ? (
+	        <section className="py-5">
+	          <div className="border border-[#e7e3e0]/12 bg-[#11100f] p-5">
+	            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e7e3e0]/12 pb-5">
+	              <div>
+	                <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Visual editor</p>
+	                <h2 className="serif mt-2 text-5xl leading-none">Шрифт</h2>
+	                <p className="mt-3 max-w-2xl text-sm leading-6 text-[#a69c96]">
+	                  Настраивай шрифты, размеры, цвета и фон отдельно для каждого блока. “Прямой эфир” справа показывает, как будет выглядеть стиль до сохранения.
+	                </p>
+	              </div>
+	              <button className="min-h-10 bg-[#e7e3e0] px-4 text-sm font-semibold text-[#080706]" onClick={saveContent}>
+	                {contentSaving ? "Сохраняю..." : "Сохранить стиль"}
+	              </button>
+	            </div>
+	            {contentMessage ? <p className="mt-4 text-sm text-[#d7c4a3]">{contentMessage}</p> : null}
+
+	            <div className="mt-6 grid gap-4 border border-[#e7e3e0]/12 bg-[#080706]/45 p-4 md:grid-cols-2">
+	              <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                URL шрифта для заголовков
+	                <input className={inputClass} value={content.visual.headingFontUrl} onChange={(event) => updateVisualFonts({ headingFontUrl: event.target.value })} placeholder="/fonts/benzin-bold.otf или URL из Медиа" />
+	              </label>
+	              <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                URL шрифта для описаний
+	                <input className={inputClass} value={content.visual.bodyFontUrl} onChange={(event) => updateVisualFonts({ bodyFontUrl: event.target.value })} placeholder="Можно оставить пустым" />
+	              </label>
+	              <p className="md:col-span-2 text-sm leading-6 text-[#85786f]">
+	                Для выделения слов в любом текстовом поле используй: <span className="font-mono text-[#e7e3e0]">[[слово]]</span> или <span className="font-mono text-[#e7e3e0]">[[слово|#080706|#e7e3e0]]</span>.
+	              </p>
+	            </div>
+
+	            <div className="mt-6 grid gap-5">
+	              {visualBlockKeys.map((blockKey) => {
+	                const style = content.visual.blocks[blockKey] ?? defaultVisualBlockStyle;
+
+	                return (
+	                  <article key={blockKey} className="grid gap-4 border border-[#e7e3e0]/12 bg-[#080706]/35 p-4 xl:grid-cols-[1fr_0.86fr]">
+	                    <div>
+	                      <div className="flex flex-wrap items-center justify-between gap-3">
+	                        <div>
+	                          <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Блок сайта</p>
+	                          <h3 className="serif mt-1 text-3xl">{visualBlockLabels[blockKey]}</h3>
+	                        </div>
+	                        <button className="border border-[#e7e3e0]/18 px-3 py-2 text-xs text-[#cbc9c8]" onClick={() => resetVisualBlock(blockKey)}>
+	                          Сбросить блок
+	                        </button>
+	                      </div>
+
+	                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                          Размер заголовка
+	                          <input className={inputClass} value={style.titleSize} onChange={(event) => updateVisualBlock(blockKey, { titleSize: event.target.value })} placeholder="например 64px или clamp(3rem, 7vw, 6rem)" />
+	                        </label>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                          Размер описания
+	                          <input className={inputClass} value={style.textSize} onChange={(event) => updateVisualBlock(blockKey, { textSize: event.target.value })} placeholder="например 18px" />
+	                        </label>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                          Цвет заголовка
+	                          <input className={inputClass} value={style.titleColor} onChange={(event) => updateVisualBlock(blockKey, { titleColor: event.target.value })} placeholder="#e7e3e0" />
+	                        </label>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                          Цвет описания
+	                          <input className={inputClass} value={style.textColor} onChange={(event) => updateVisualBlock(blockKey, { textColor: event.target.value })} placeholder="#cbc9c8" />
+	                        </label>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                          Цвет фона блока
+	                          <input className={inputClass} value={style.backgroundColor} onChange={(event) => updateVisualBlock(blockKey, { backgroundColor: event.target.value })} placeholder="#080706" />
+	                        </label>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                          Цвет маленьких подписей
+	                          <input className={inputClass} value={style.accentColor} onChange={(event) => updateVisualBlock(blockKey, { accentColor: event.target.value })} placeholder="#a69c96" />
+	                        </label>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                          Цвет выделенного слова
+	                          <input className={inputClass} value={style.highlightColor} onChange={(event) => updateVisualBlock(blockKey, { highlightColor: event.target.value })} placeholder="#080706" />
+	                        </label>
+	                        <label className="grid gap-2 text-sm text-[#cbc9c8]">
+	                          Подложка выделенного слова
+	                          <input className={inputClass} value={style.highlightBackground} onChange={(event) => updateVisualBlock(blockKey, { highlightBackground: event.target.value })} placeholder="#e7e3e0" />
+	                        </label>
+	                      </div>
+	                    </div>
+
+	                    <div>
+	                      <p className="mb-2 text-xs uppercase tracking-[0.18em] text-[#85786f]">Прямой эфир</p>
+	                      <VisualLivePreview blockKey={blockKey} style={style} />
+	                    </div>
+	                  </article>
+	                );
+	              })}
+	            </div>
+	          </div>
+	        </section>
 	      ) : activeView === "media" ? (
         <section className="py-5">
           <div className="grid gap-5 lg:grid-cols-[0.72fr_1.28fr]">
@@ -1675,7 +1840,7 @@ export function AdminCRM() {
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Media library</p>
                 <h2 className="serif mt-2 text-5xl leading-none">Картинки</h2>
-                <p className="mt-3 text-sm leading-6 text-[#a69c96]">Загружай изображения и копируй URL в обложку или галерею проекта.</p>
+                <p className="mt-3 text-sm leading-6 text-[#a69c96]">Загружай изображения и шрифты, копируй URL в проекты или вкладку “Шрифт”.</p>
               </div>
 
               <div className="mt-6 grid gap-4">
@@ -1684,7 +1849,7 @@ export function AdminCRM() {
                   <input
                     className={inputClass}
                     type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    accept="image/png,image/jpeg,image/webp,image/gif,.otf,.ttf,.woff,.woff2"
                     onChange={(event) => setMediaFile(event.target.files?.[0] ?? null)}
                   />
                 </label>
@@ -1720,7 +1885,9 @@ export function AdminCRM() {
                   <p className="bg-[#11100f] p-5 text-sm text-[#85786f]">Картинок пока нет.</p>
                 ) : media.map((item) => (
                   <div key={item.id} className="bg-[#11100f] p-3">
-                    <div className="aspect-[4/3] border border-[#e7e3e0]/10 bg-cover bg-center" style={{ backgroundImage: `url(${item.url})` }} />
+                    <div className="grid aspect-[4/3] place-items-center border border-[#e7e3e0]/10 bg-cover bg-center text-xs uppercase tracking-[0.18em] text-[#85786f]" style={item.kind === "image" ? { backgroundImage: `url(${item.url})` } : undefined}>
+                      {item.kind === "image" ? null : "Font"}
+                    </div>
                     <p className="mt-3 truncate text-sm font-semibold text-[#e7e3e0]">{item.title || item.alt || "Изображение"}</p>
                     <p className="mt-1 truncate text-xs text-[#85786f]">{item.url}</p>
                     <div className="mt-3 flex gap-2">

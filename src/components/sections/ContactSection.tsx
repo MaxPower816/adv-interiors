@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { trackEvent } from "@/lib/utils";
-import type { PricePlan, SiteContent } from "@/types";
+import { sectionStyle } from "@/lib/visual-style";
+import type { PricePlan, SiteContent, SiteVisualBlockStyle } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
@@ -49,7 +50,7 @@ function getLeadSource(activityTrail: Array<{ name: string; path: string }>) {
   return activityTrail[0]?.path || "Форма сайта";
 }
 
-export function ContactSection({ contact, pricingPlans }: { contact: SiteContent["contact"]; pricingPlans: PricePlan[] }) {
+export function ContactSection({ contact, pricingPlans, visualStyle }: { contact: SiteContent["contact"]; pricingPlans: PricePlan[]; visualStyle?: SiteVisualBlockStyle }) {
   const [success, setSuccess] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const {
@@ -94,12 +95,13 @@ export function ContactSection({ contact, pricingPlans }: { contact: SiteContent
   const FieldError = ({ name }: { name: keyof FormValues }) => errors[name] ? <p className="mt-2 text-sm text-[#e7b7a3]">{errors[name]?.message}</p> : null;
 
   return (
-    <section id="contact" className="section bg-[#11100f]">
+    <section id="contact" className="section bg-[#11100f]" style={sectionStyle(visualStyle)}>
       <div className="container grid gap-12 md:grid-cols-[0.9fr_1.1fr]">
         <SectionHeading
           eyebrow={contact.eyebrow}
           title={contact.title}
           text={contact.text}
+          visualStyle={visualStyle}
         />
         <form className="glass grid gap-5 p-5 md:p-8" onSubmit={handleSubmit(onSubmit)} onFocus={() => trackEvent("contact_form_start")}>
           {success ? (

@@ -8,6 +8,7 @@ import { services } from "@/content/services";
 import { aboutContent, heroCopy } from "@/content/site-content";
 import { testimonials } from "@/content/testimonials";
 import { hasSupabaseConfig, supabaseRequest } from "./supabase-rest";
+import { defaultVisualSettings, normalizeVisualSettings } from "./visual-style";
 
 type CmsProjectRow = {
   id: string;
@@ -115,6 +116,7 @@ export const defaultSiteContent: SiteContent = {
     successTitle: "Заявка отправлена",
     successText: "Спасибо. Заявка сохранена в CRM, и мы свяжемся с вами после уточнения деталей.",
   },
+  visual: defaultVisualSettings,
 };
 
 function normalizeSiteContent(content?: Partial<SiteContent>) {
@@ -132,6 +134,7 @@ function normalizeSiteContent(content?: Partial<SiteContent>) {
     pricing: { ...defaultSiteContent.pricing, ...(content?.pricing ?? {}) },
     faq: { ...defaultSiteContent.faq, ...(content?.faq ?? {}) },
     contact: { ...defaultSiteContent.contact, ...(content?.contact ?? {}) },
+    visual: normalizeVisualSettings(content?.visual),
   };
 }
 

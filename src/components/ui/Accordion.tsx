@@ -3,8 +3,11 @@
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { textStyle, titleStyle } from "@/lib/visual-style";
+import type { SiteVisualBlockStyle } from "@/types";
+import { StyledText } from "./StyledText";
 
-export function Accordion({ items }: { items: readonly (readonly [string, string])[] }) {
+export function Accordion({ items, visualStyle }: { items: readonly (readonly [string, string])[]; visualStyle?: SiteVisualBlockStyle }) {
   const [open, setOpen] = useState(0);
 
   return (
@@ -16,11 +19,11 @@ export function Accordion({ items }: { items: readonly (readonly [string, string
             aria-expanded={open === index}
             onClick={() => setOpen(open === index ? -1 : index)}
           >
-            <span>{question}</span>
+            <span style={titleStyle(visualStyle)}><StyledText text={question} visualStyle={visualStyle} /></span>
             <ChevronDown className={cn("h-5 w-5 shrink-0 transition", open === index && "rotate-180")} aria-hidden />
           </button>
           <div className={cn("grid transition-all duration-300", open === index ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
-            <p className="overflow-hidden pb-5 leading-7 text-[#cbc9c8]">{answer}</p>
+            <p className="overflow-hidden pb-5 leading-7 text-[#cbc9c8]" style={textStyle(visualStyle)}><StyledText text={answer} visualStyle={visualStyle} /></p>
           </div>
         </div>
       ))}

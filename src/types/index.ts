@@ -79,6 +79,35 @@ export type SiteContact = {
   successText: string;
 };
 
+export type SiteVisualBlockKey =
+  | "hero"
+  | "about"
+  | "services"
+  | "process"
+  | "seoBlock"
+  | "beforeAfter"
+  | "testimonials"
+  | "pricing"
+  | "faq"
+  | "contact";
+
+export type SiteVisualBlockStyle = {
+  titleSize: string;
+  textSize: string;
+  titleColor: string;
+  textColor: string;
+  backgroundColor: string;
+  accentColor: string;
+  highlightColor: string;
+  highlightBackground: string;
+};
+
+export type SiteVisualSettings = {
+  headingFontUrl: string;
+  bodyFontUrl: string;
+  blocks: Record<SiteVisualBlockKey, SiteVisualBlockStyle>;
+};
+
 export type SiteContent = {
   hero: {
     eyebrow: string;
@@ -131,6 +160,7 @@ export type SiteContent = {
     items: [string, string][];
   };
   contact: SiteContact;
+  visual: SiteVisualSettings;
 };
 
 export type MediaItem = {

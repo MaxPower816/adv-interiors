@@ -3,15 +3,20 @@
 import { ArrowUpRight } from "lucide-react";
 import { roomStages } from "@/config/room-stages";
 import { cn } from "@/lib/utils";
+import { accentStyle, textStyle, titleStyle } from "@/lib/visual-style";
+import type { SiteVisualBlockStyle } from "@/types";
+import { StyledText } from "@/components/ui/StyledText";
 
-export function StageText({ progress, finalCta }: { progress: number; finalCta: string }) {
+export function StageText({ progress, finalCta, visualStyle }: { progress: number; finalCta: string; visualStyle?: SiteVisualBlockStyle }) {
   const stage = roomStages.find((item) => progress >= item.start && progress <= item.end) ?? roomStages[roomStages.length - 1];
 
   return (
     <div className={cn("max-w-[650px] transition duration-500", stage.side === "right" && "ml-auto text-right")}>
-      <p className="mb-5 text-xs uppercase tracking-[0.28em] text-[#a69c96]">{stage.label}</p>
-      <h2 className="serif text-[clamp(2.6rem,6vw,6rem)] font-medium leading-[0.92] text-[#e7e3e0]">{stage.text}</h2>
-      {stage.subtext ? <p className="mt-6 text-lg leading-8 text-[#cbc9c8]">{stage.subtext}</p> : null}
+      <p className="mb-5 text-xs uppercase tracking-[0.28em] text-[#a69c96]" style={accentStyle(visualStyle)}>{stage.label}</p>
+      <h2 className="serif text-[clamp(2.6rem,6vw,6rem)] font-medium leading-[0.92] text-[#e7e3e0]" style={titleStyle(visualStyle)}>
+        <StyledText text={stage.text} visualStyle={visualStyle} />
+      </h2>
+      {stage.subtext ? <p className="mt-6 text-lg leading-8 text-[#cbc9c8]" style={textStyle(visualStyle)}><StyledText text={stage.subtext} visualStyle={visualStyle} /></p> : null}
       {progress > 0.88 ? (
         <a
           href="#portfolio"
