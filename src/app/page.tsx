@@ -14,7 +14,6 @@ import { SEOTextSection } from "@/components/sections/SEOTextSection";
 import { ServicesSection } from "@/components/sections/ServicesSection";
 import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import { siteConfig } from "@/config/site";
-import { faq } from "@/content/faq";
 import { getSiteContent } from "@/lib/cms";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -51,7 +50,7 @@ export default async function Home() {
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: faq.map(([question, answer]) => ({
+    mainEntity: content.faq.items.map(([question, answer]) => ({
       "@type": "Question",
       name: question,
       acceptedAnswer: {
@@ -81,14 +80,14 @@ export default async function Home() {
         <HeroSection hero={content.hero} />
         <PortfolioSection />
         <AboutSection about={content.about} />
-        <ServicesSection />
-        <ProcessSection />
-        <SEOTextSection />
-        <BeforeAfterSection />
-        <TestimonialsSection />
-        <PricingSection />
-        <FAQSection />
-        <ContactSection />
+        <ServicesSection services={content.services} />
+        <ProcessSection process={content.process} />
+        <SEOTextSection content={content.seoBlock} />
+        <BeforeAfterSection beforeAfter={content.beforeAfter} />
+        <TestimonialsSection testimonials={content.testimonials} />
+        <PricingSection pricing={content.pricing} />
+        <FAQSection faq={content.faq} />
+        <ContactSection contact={content.contact} pricingPlans={content.pricing.plans} />
       </main>
       <Footer />
       <a href="#contact" className="fixed bottom-5 right-5 z-50 hidden border border-[#e7e3e0]/25 bg-[#080706]/75 px-4 py-3 text-xs uppercase tracking-[0.16em] backdrop-blur md:block">

@@ -1,7 +1,12 @@
 import type { Project, SiteContent } from "@/types";
 import { siteConfig } from "@/config/site";
+import { faq } from "@/content/faq";
+import { objectTypes, pricingPlans } from "@/content/pricing";
 import { projects as fallbackProjects } from "@/content/projects";
+import { seoLandingContent } from "@/content/seo";
+import { services } from "@/content/services";
 import { aboutContent, heroCopy } from "@/content/site-content";
+import { testimonials } from "@/content/testimonials";
 import { hasSupabaseConfig, supabaseRequest } from "./supabase-rest";
 
 type CmsProjectRow = {
@@ -39,12 +44,76 @@ export type ProjectPatch = Omit<Project, "id"> & {
 
 export const defaultSiteContent: SiteContent = {
   hero: heroCopy,
-  about: aboutContent,
+  about: {
+    ...aboutContent,
+    image: "",
+  },
   seo: {
     title: siteConfig.title,
     description: siteConfig.description,
     keywords: siteConfig.keywords,
     ogImage: "/images/interior-placeholder.svg",
+  },
+  services: {
+    eyebrow: "Services",
+    title: "Форматы работы",
+    text: "От точечной консультации до проекта под ключ с комплектацией и сопровождением.",
+    items: services,
+  },
+  process: {
+    eyebrow: "Process",
+    title: "Путь от брифа до пространства",
+    text: "Каждый этап фиксирует решения и снижает неопределенность ремонта.",
+    steps: [
+      "Знакомство и бриф",
+      "Обмеры и техническое задание",
+      "Планировочные решения",
+      "Концепция и стилистика",
+      "Визуализация",
+      "Рабочая документация",
+      "Комплектация",
+      "Авторское сопровождение",
+      "Реализация и декорирование",
+    ].map((title) => ({
+      title,
+      text: "Мягкая синхронизация задач, визуальных решений и технических ограничений.",
+    })),
+  },
+  seoBlock: {
+    eyebrow: "Interior design studio",
+    title: seoLandingContent.title,
+    text: seoLandingContent.text,
+    items: seoLandingContent.items,
+  },
+  beforeAfter: {
+    eyebrow: "Before / After",
+    title: "От пустого пространства\nдо продуманного сценария жизни.",
+    beforeImage: "",
+    afterImage: "",
+  },
+  testimonials: {
+    eyebrow: "Voices",
+    title: "Отзывы клиентов",
+    items: testimonials,
+  },
+  pricing: {
+    eyebrow: "Price list",
+    title: "PRICE LIST",
+    backgroundImage: "",
+    objectTypes: Object.entries(objectTypes).map(([key, value]) => ({ key, ...value })),
+    plans: pricingPlans,
+  },
+  faq: {
+    eyebrow: "FAQ",
+    title: "Частые вопросы",
+    items: faq.map(([question, answer]) => [question, answer] as [string, string]),
+  },
+  contact: {
+    eyebrow: "Contact",
+    title: "Давайте создадим пространство,\nкоторое будет вашим.",
+    text: "Расскажите немного о будущем интерьере. Мы свяжемся с вами, уточним детали и предложим оптимальный формат работы.",
+    successTitle: "Заявка отправлена",
+    successText: "Спасибо. Заявка сохранена в CRM, и мы свяжемся с вами после уточнения деталей.",
   },
 };
 
@@ -55,6 +124,14 @@ function normalizeSiteContent(content?: Partial<SiteContent>) {
     hero: { ...defaultSiteContent.hero, ...(content?.hero ?? {}) },
     about: { ...defaultSiteContent.about, ...(content?.about ?? {}) },
     seo: { ...defaultSiteContent.seo, ...(content?.seo ?? {}) },
+    services: { ...defaultSiteContent.services, ...(content?.services ?? {}) },
+    process: { ...defaultSiteContent.process, ...(content?.process ?? {}) },
+    seoBlock: { ...defaultSiteContent.seoBlock, ...(content?.seoBlock ?? {}) },
+    beforeAfter: { ...defaultSiteContent.beforeAfter, ...(content?.beforeAfter ?? {}) },
+    testimonials: { ...defaultSiteContent.testimonials, ...(content?.testimonials ?? {}) },
+    pricing: { ...defaultSiteContent.pricing, ...(content?.pricing ?? {}) },
+    faq: { ...defaultSiteContent.faq, ...(content?.faq ?? {}) },
+    contact: { ...defaultSiteContent.contact, ...(content?.contact ?? {}) },
   };
 }
 

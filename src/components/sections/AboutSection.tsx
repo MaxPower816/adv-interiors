@@ -8,7 +8,11 @@ export function AboutSection({ about }: { about: SiteContent["about"] }) {
   return (
     <section className="section bg-[#080706]">
       <div className="container grid gap-12 md:grid-cols-[0.9fr_1.1fr] md:items-center">
-        <div className="image-surface aspect-[4/5] border border-[#e7e3e0]/12" aria-label="Фотография дизайнера" />
+        <div
+          className={`aspect-[4/5] border border-[#e7e3e0]/12 bg-cover bg-center ${about.image ? "" : "image-surface"}`}
+          style={about.image ? { backgroundImage: `url(${about.image})` } : undefined}
+          aria-label="Фотография дизайнера"
+        />
         <div>
           <SectionHeading eyebrow="Philosophy" title={about.title} text={about.text} />
           <div className="mt-10 grid grid-cols-2 gap-px bg-[#e7e3e0]/12">

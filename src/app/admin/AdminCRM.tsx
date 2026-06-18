@@ -59,6 +59,7 @@ const emptyContent: SiteContent = {
   about: {
     title: "",
     text: "",
+    image: "",
     stats: [],
   },
   seo: {
@@ -66,6 +67,54 @@ const emptyContent: SiteContent = {
     description: "",
     keywords: [],
     ogImage: "",
+  },
+  services: {
+    eyebrow: "",
+    title: "",
+    text: "",
+    items: [],
+  },
+  process: {
+    eyebrow: "",
+    title: "",
+    text: "",
+    steps: [],
+  },
+  seoBlock: {
+    eyebrow: "",
+    title: "",
+    text: "",
+    items: [],
+  },
+  beforeAfter: {
+    eyebrow: "",
+    title: "",
+    beforeImage: "",
+    afterImage: "",
+  },
+  testimonials: {
+    eyebrow: "",
+    title: "",
+    items: [],
+  },
+  pricing: {
+    eyebrow: "",
+    title: "",
+    backgroundImage: "",
+    objectTypes: [],
+    plans: [],
+  },
+  faq: {
+    eyebrow: "",
+    title: "",
+    items: [],
+  },
+  contact: {
+    eyebrow: "",
+    title: "",
+    text: "",
+    successTitle: "",
+    successText: "",
   },
 };
 
@@ -174,6 +223,88 @@ function commaToArray(value: string) {
 
 function arrayToComma(value: string[]) {
   return value.join(", ");
+}
+
+function pairsToLines<T>(items: T[], mapper: (item: T) => string) {
+  return items.map(mapper).join("\n");
+}
+
+function linesToServices(value: string): SiteContent["services"]["items"] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [title = "", ...textParts] = line.split("|");
+      return { title: title.trim(), text: textParts.join("|").trim() };
+    })
+    .filter((item) => item.title && item.text);
+}
+
+function linesToProcessSteps(value: string): SiteContent["process"]["steps"] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [title = "", ...textParts] = line.split("|");
+      return { title: title.trim(), text: textParts.join("|").trim() };
+    })
+    .filter((item) => item.title && item.text);
+}
+
+function linesToTestimonials(value: string): SiteContent["testimonials"]["items"] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name = "", project = "", city = "", ...textParts] = line.split("|");
+      return { name: name.trim(), project: project.trim(), city: city.trim(), text: textParts.join("|").trim() };
+    })
+    .filter((item) => item.name && item.text);
+}
+
+function linesToObjectTypes(value: string): SiteContent["pricing"]["objectTypes"] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [key = "", label = "", min = "", ...noteParts] = line.split("|");
+      return { key: key.trim(), label: label.trim(), min: min.trim(), note: noteParts.join("|").trim() };
+    })
+    .filter((item) => item.key && item.label);
+}
+
+function linesToPricePlans(value: string): SiteContent["pricing"]["plans"] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [id = "", title = "", price = "", duration = "", features = ""] = line.split("|");
+      return {
+        id: id.trim(),
+        title: title.trim(),
+        price: price.trim(),
+        duration: duration.trim(),
+        features: features.split(";").map((item) => item.trim()).filter(Boolean),
+      };
+    })
+    .filter((item) => item.id && item.title);
+}
+
+function linesToFaq(value: string): SiteContent["faq"]["items"] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [question = "", ...answerParts] = line.split("|");
+      return [question.trim(), answerParts.join("|").trim()] as [string, string];
+    })
+    .filter(([question, answer]) => question && answer);
 }
 
 function SeoCounter({ value, ideal, max }: { value: string; ideal: string; max: number }) {
@@ -1223,7 +1354,7 @@ export function AdminCRM() {
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Content CMS</p>
                 <h2 className="serif mt-2 text-5xl leading-none">Тексты сайта</h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-[#a69c96]">Пока здесь главный экран и блок философии. После сохранения Vercel обновит публичную страницу примерно в течение минуты.</p>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-[#a69c96]">Здесь редактируются основные тексты и картинки секций главной. Для картинок загрузи файл во вкладке “Медиа” и вставь URL в нужное поле.</p>
               </div>
               <div className="flex gap-2">
                 <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm text-[#cbc9c8]" onClick={loadContent}>
@@ -1273,6 +1404,10 @@ export function AdminCRM() {
                   <textarea className={textareaClass} value={content.about.text} onChange={(event) => updateContent({ about: { ...content.about, text: event.target.value } })} />
                 </label>
                 <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Картинка блока URL
+                  <input className={`${inputClass} min-w-0 break-all`} value={content.about.image} onChange={(event) => updateContent({ about: { ...content.about, image: event.target.value } })} />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
                   Цифры, формат: число|суффикс|подпись
                   <textarea
                     className={textareaClass}
@@ -1315,6 +1450,184 @@ export function AdminCRM() {
                 <p className="text-sm text-[#9bb7ff]">{content.seo.title || "Title главной"}</p>
                 <p className="mt-1 text-xs text-[#8da98d]">adv-interiors.vercel.app</p>
                 <p className="mt-2 text-sm leading-6 text-[#cbc9c8]">{content.seo.description || "Description главной страницы"}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+                <h3 className="serif text-4xl">Услуги</h3>
+                <div className="mt-5 grid gap-4">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Eyebrow
+                    <input className={inputClass} value={content.services.eyebrow} onChange={(event) => updateContent({ services: { ...content.services, eyebrow: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Заголовок
+                    <textarea className={textareaClass} value={content.services.title} onChange={(event) => updateContent({ services: { ...content.services, title: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Описание
+                    <textarea className={textareaClass} value={content.services.text} onChange={(event) => updateContent({ services: { ...content.services, text: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Список услуг, формат: название|текст
+                    <textarea className={textareaClass} value={pairsToLines(content.services.items, (item) => `${item.title}|${item.text}`)} onChange={(event) => updateContent({ services: { ...content.services, items: linesToServices(event.target.value) } })} />
+                  </label>
+                </div>
+              </div>
+
+              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+                <h3 className="serif text-4xl">Процесс</h3>
+                <div className="mt-5 grid gap-4">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Eyebrow
+                    <input className={inputClass} value={content.process.eyebrow} onChange={(event) => updateContent({ process: { ...content.process, eyebrow: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Заголовок
+                    <textarea className={textareaClass} value={content.process.title} onChange={(event) => updateContent({ process: { ...content.process, title: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Описание
+                    <textarea className={textareaClass} value={content.process.text} onChange={(event) => updateContent({ process: { ...content.process, text: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Этапы, формат: название|текст
+                    <textarea className={textareaClass} value={pairsToLines(content.process.steps, (item) => `${item.title}|${item.text}`)} onChange={(event) => updateContent({ process: { ...content.process, steps: linesToProcessSteps(event.target.value) } })} />
+                  </label>
+                </div>
+              </div>
+
+              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+                <h3 className="serif text-4xl">SEO-текст на странице</h3>
+                <div className="mt-5 grid gap-4">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Eyebrow
+                    <input className={inputClass} value={content.seoBlock.eyebrow} onChange={(event) => updateContent({ seoBlock: { ...content.seoBlock, eyebrow: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Заголовок
+                    <textarea className={textareaClass} value={content.seoBlock.title} onChange={(event) => updateContent({ seoBlock: { ...content.seoBlock, title: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Текст
+                    <textarea className={`${textareaClass} min-h-40`} value={content.seoBlock.text} onChange={(event) => updateContent({ seoBlock: { ...content.seoBlock, text: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Пункты, каждый с новой строки
+                    <textarea className={textareaClass} value={arrayToLines(content.seoBlock.items)} onChange={(event) => updateContent({ seoBlock: { ...content.seoBlock, items: linesToArray(event.target.value) } })} />
+                  </label>
+                </div>
+              </div>
+
+              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+                <h3 className="serif text-4xl">До / после</h3>
+                <div className="mt-5 grid gap-4">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Eyebrow
+                    <input className={inputClass} value={content.beforeAfter.eyebrow} onChange={(event) => updateContent({ beforeAfter: { ...content.beforeAfter, eyebrow: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Заголовок
+                    <textarea className={textareaClass} value={content.beforeAfter.title} onChange={(event) => updateContent({ beforeAfter: { ...content.beforeAfter, title: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Картинка ДО URL
+                    <input className={`${inputClass} min-w-0 break-all`} value={content.beforeAfter.beforeImage} onChange={(event) => updateContent({ beforeAfter: { ...content.beforeAfter, beforeImage: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Картинка ПОСЛЕ URL
+                    <input className={`${inputClass} min-w-0 break-all`} value={content.beforeAfter.afterImage} onChange={(event) => updateContent({ beforeAfter: { ...content.beforeAfter, afterImage: event.target.value } })} />
+                  </label>
+                </div>
+              </div>
+
+              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+                <h3 className="serif text-4xl">Отзывы</h3>
+                <div className="mt-5 grid gap-4">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Eyebrow
+                    <input className={inputClass} value={content.testimonials.eyebrow} onChange={(event) => updateContent({ testimonials: { ...content.testimonials, eyebrow: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Заголовок
+                    <textarea className={textareaClass} value={content.testimonials.title} onChange={(event) => updateContent({ testimonials: { ...content.testimonials, title: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Отзывы, формат: имя|проект|город|текст
+                    <textarea className={`${textareaClass} min-h-40`} value={pairsToLines(content.testimonials.items, (item) => `${item.name}|${item.project}|${item.city}|${item.text}`)} onChange={(event) => updateContent({ testimonials: { ...content.testimonials, items: linesToTestimonials(event.target.value) } })} />
+                  </label>
+                </div>
+              </div>
+
+              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+                <h3 className="serif text-4xl">Прайс</h3>
+                <div className="mt-5 grid gap-4">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Eyebrow
+                    <input className={inputClass} value={content.pricing.eyebrow} onChange={(event) => updateContent({ pricing: { ...content.pricing, eyebrow: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Заголовок
+                    <textarea className={textareaClass} value={content.pricing.title} onChange={(event) => updateContent({ pricing: { ...content.pricing, title: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Фоновая картинка URL
+                    <input className={`${inputClass} min-w-0 break-all`} value={content.pricing.backgroundImage} onChange={(event) => updateContent({ pricing: { ...content.pricing, backgroundImage: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Типы объектов, формат: ключ|название|минимум|заметка
+                    <textarea className={textareaClass} value={pairsToLines(content.pricing.objectTypes, (item) => `${item.key}|${item.label}|${item.min}|${item.note}`)} onChange={(event) => updateContent({ pricing: { ...content.pricing, objectTypes: linesToObjectTypes(event.target.value) } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Тарифы, формат: id|название|цена|срок|пункт;пункт;пункт
+                    <textarea className={`${textareaClass} min-h-40`} value={pairsToLines(content.pricing.plans, (item) => `${item.id}|${item.title}|${item.price}|${item.duration}|${item.features.join("; ")}`)} onChange={(event) => updateContent({ pricing: { ...content.pricing, plans: linesToPricePlans(event.target.value) } })} />
+                  </label>
+                </div>
+              </div>
+
+              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+                <h3 className="serif text-4xl">FAQ</h3>
+                <div className="mt-5 grid gap-4">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Eyebrow
+                    <input className={inputClass} value={content.faq.eyebrow} onChange={(event) => updateContent({ faq: { ...content.faq, eyebrow: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Заголовок
+                    <textarea className={textareaClass} value={content.faq.title} onChange={(event) => updateContent({ faq: { ...content.faq, title: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Вопросы, формат: вопрос|ответ
+                    <textarea className={`${textareaClass} min-h-40`} value={pairsToLines(content.faq.items, ([question, answer]) => `${question}|${answer}`)} onChange={(event) => updateContent({ faq: { ...content.faq, items: linesToFaq(event.target.value) } })} />
+                  </label>
+                </div>
+              </div>
+
+              <div className="border border-[#e7e3e0]/12 bg-[#080706]/45 p-4">
+                <h3 className="serif text-4xl">Контакты / форма</h3>
+                <div className="mt-5 grid gap-4">
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Eyebrow
+                    <input className={inputClass} value={content.contact.eyebrow} onChange={(event) => updateContent({ contact: { ...content.contact, eyebrow: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Заголовок
+                    <textarea className={textareaClass} value={content.contact.title} onChange={(event) => updateContent({ contact: { ...content.contact, title: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Текст рядом с формой
+                    <textarea className={textareaClass} value={content.contact.text} onChange={(event) => updateContent({ contact: { ...content.contact, text: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Заголовок после отправки
+                    <input className={inputClass} value={content.contact.successTitle} onChange={(event) => updateContent({ contact: { ...content.contact, successTitle: event.target.value } })} />
+                  </label>
+                  <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                    Текст после отправки
+                    <textarea className={textareaClass} value={content.contact.successText} onChange={(event) => updateContent({ contact: { ...content.contact, successText: event.target.value } })} />
+                  </label>
+                </div>
               </div>
             </div>
           </div>

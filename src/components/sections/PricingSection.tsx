@@ -1,30 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { objectTypes, pricingPlans } from "@/content/pricing";
 import { trackEvent } from "@/lib/utils";
+import type { SiteContent } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
-type ObjectKey = keyof typeof objectTypes;
-
-export function PricingSection() {
-  const [type, setType] = useState<ObjectKey>("flat");
+export function PricingSection({ pricing }: { pricing: SiteContent["pricing"] }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeType = pricing.objectTypes[activeIndex] ?? pricing.objectTypes[0];
 
   return (
-    <section id="pricing" className="section image-surface">
+    <section
+      id="pricing"
+      className={`section bg-cover bg-center ${pricing.backgroundImage ? "" : "image-surface"}`}
+      style={pricing.backgroundImage ? { backgroundImage: `url(${pricing.backgroundImage})` } : undefined}
+    >
       <div className="absolute inset-0 bg-[#050505]/60" />
       <div className="container relative">
-        <SectionHeading eyebrow="Price list" title="PRICE LIST" text={`${objectTypes[type].note} Минимальная стоимость проекта — ${objectTypes[type].min}.`} />
+        <SectionHeading eyebrow={pricing.eyebrow} title={pricing.title} text={`${activeType?.note ?? ""} Минимальная стоимость проекта — ${activeType?.min ?? ""}.`} />
         <div className="mt-8 flex flex-wrap gap-2">
-          {(Object.keys(objectTypes) as ObjectKey[]).map((key) => (
-            <button key={key} className={`min-h-11 border px-4 text-sm ${type === key ? "bg-[#e7e3e0] text-[#080706]" : "border-[#e7e3e0]/20"}`} onClick={() => setType(key)}>
-              {objectTypes[key].label}
+          {pricing.objectTypes.map((item, index) => (
+            <button key={item.key || item.label} className={`min-h-11 border px-4 text-sm ${activeIndex === index ? "bg-[#e7e3e0] text-[#080706]" : "border-[#e7e3e0]/20"}`} onClick={() => setActiveIndex(index)}>
+              {item.label}
             </button>
           ))}
         </div>
         <div className="mt-12 grid gap-px overflow-hidden border border-[#e7e3e0]/15 bg-[#e7e3e0]/15 md:grid-cols-4">
-          {pricingPlans.map((plan) => (
+          {pricing.plans.map((plan) => (
             <article key={plan.id} className="bg-[#080706]/80 p-6 backdrop-blur">
               <h3 className="serif text-4xl">{plan.title}</h3>
               <p className="mt-5 text-xl">{plan.price}</p>

@@ -5,8 +5,8 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { pricingPlans } from "@/content/pricing";
 import { trackEvent } from "@/lib/utils";
+import type { PricePlan, SiteContent } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
@@ -49,7 +49,7 @@ function getLeadSource(activityTrail: Array<{ name: string; path: string }>) {
   return activityTrail[0]?.path || "Форма сайта";
 }
 
-export function ContactSection() {
+export function ContactSection({ contact, pricingPlans }: { contact: SiteContent["contact"]; pricingPlans: PricePlan[] }) {
   const [success, setSuccess] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const {
@@ -59,7 +59,7 @@ export function ContactSection() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { service: pricingPlans[0].title, agreement: false, website: "" },
+    defaultValues: { service: pricingPlans[0]?.title ?? "", agreement: false, website: "" },
   });
 
   useEffect(() => {
@@ -97,15 +97,15 @@ export function ContactSection() {
     <section id="contact" className="section bg-[#11100f]">
       <div className="container grid gap-12 md:grid-cols-[0.9fr_1.1fr]">
         <SectionHeading
-          eyebrow="Contact"
-          title={"Давайте создадим пространство,\nкоторое будет вашим."}
-          text="Расскажите немного о будущем интерьере. Мы свяжемся с вами, уточним детали и предложим оптимальный формат работы."
+          eyebrow={contact.eyebrow}
+          title={contact.title}
+          text={contact.text}
         />
         <form className="glass grid gap-5 p-5 md:p-8" onSubmit={handleSubmit(onSubmit)} onFocus={() => trackEvent("contact_form_start")}>
           {success ? (
             <div className="py-10">
-              <h3 className="serif text-4xl">Заявка отправлена</h3>
-              <p className="mt-4 leading-7 text-[#cbc9c8]">Спасибо. Заявка сохранена в CRM, и мы свяжемся с вами после уточнения деталей.</p>
+              <h3 className="serif text-4xl">{contact.successTitle}</h3>
+              <p className="mt-4 leading-7 text-[#cbc9c8]">{contact.successText}</p>
             </div>
           ) : (
             <>

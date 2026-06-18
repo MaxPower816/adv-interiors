@@ -33,6 +33,52 @@ export type SiteStat = {
   label: string;
 };
 
+export type SiteService = {
+  title: string;
+  text: string;
+};
+
+export type SiteProcessStep = {
+  title: string;
+  text: string;
+};
+
+export type SiteSeoBlock = {
+  eyebrow: string;
+  title: string;
+  text: string;
+  items: string[];
+};
+
+export type SiteBeforeAfter = {
+  eyebrow: string;
+  title: string;
+  beforeImage: string;
+  afterImage: string;
+};
+
+export type SiteTestimonial = {
+  name: string;
+  project: string;
+  city: string;
+  text: string;
+};
+
+export type SitePricingObjectType = {
+  key: string;
+  label: string;
+  min: string;
+  note: string;
+};
+
+export type SiteContact = {
+  eyebrow: string;
+  title: string;
+  text: string;
+  successTitle: string;
+  successText: string;
+};
+
 export type SiteContent = {
   hero: {
     eyebrow: string;
@@ -44,6 +90,7 @@ export type SiteContent = {
   about: {
     title: string;
     text: string;
+    image: string;
     stats: SiteStat[];
   };
   seo: {
@@ -52,6 +99,38 @@ export type SiteContent = {
     keywords: string[];
     ogImage: string;
   };
+  services: {
+    eyebrow: string;
+    title: string;
+    text: string;
+    items: SiteService[];
+  };
+  process: {
+    eyebrow: string;
+    title: string;
+    text: string;
+    steps: SiteProcessStep[];
+  };
+  seoBlock: SiteSeoBlock;
+  beforeAfter: SiteBeforeAfter;
+  testimonials: {
+    eyebrow: string;
+    title: string;
+    items: SiteTestimonial[];
+  };
+  pricing: {
+    eyebrow: string;
+    title: string;
+    backgroundImage: string;
+    objectTypes: SitePricingObjectType[];
+    plans: PricePlan[];
+  };
+  faq: {
+    eyebrow: string;
+    title: string;
+    items: [string, string][];
+  };
+  contact: SiteContact;
 };
 
 export type MediaItem = {
