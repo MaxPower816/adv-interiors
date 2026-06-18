@@ -44,6 +44,18 @@ export type SiteContent = {
   };
 };
 
+export type MediaItem = {
+  id: string;
+  createdAt: string;
+  title: string;
+  url: string;
+  alt: string;
+  kind: string;
+  width?: number;
+  height?: number;
+  sizeBytes?: number;
+};
+
 export type PricePlan = {
   id: string;
   title: string;

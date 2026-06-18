@@ -1,8 +1,8 @@
 "use client";
 
-import { LogOut, Plus, RefreshCw, Search, ShieldCheck, Trash2 } from "lucide-react";
+import { Copy, LogOut, Plus, RefreshCw, Search, ShieldCheck, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { ActivityEvent, Lead, LeadStatus, Project, SiteContent } from "@/types";
+import type { ActivityEvent, Lead, LeadStatus, MediaItem, Project, SiteContent } from "@/types";
 
 const statusLabels: Record<LeadStatus, string> = {
   new: "Новая",
@@ -167,6 +167,10 @@ export function AdminCRM() {
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [content, setContent] = useState<SiteContent>(emptyContent);
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [mediaTitle, setMediaTitle] = useState("");
+  const [mediaAlt, setMediaAlt] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [selectedId, setSelectedId] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [query, setQuery] = useState("");
@@ -175,7 +179,9 @@ export function AdminCRM() {
   const [projectSaving, setProjectSaving] = useState(false);
   const [contentSaving, setContentSaving] = useState(false);
   const [contentMessage, setContentMessage] = useState("");
-  const [activeView, setActiveView] = useState<"leads" | "projects" | "content">("leads");
+  const [mediaSaving, setMediaSaving] = useState(false);
+  const [mediaMessage, setMediaMessage] = useState("");
+  const [activeView, setActiveView] = useState<"leads" | "projects" | "content" | "media">("leads");
 
   const selectedLead = leads.find((lead) => lead.id === selectedId) ?? leads[0] ?? null;
   const selectedProject = projects.find((project) => (project.id || project.slug) === selectedProjectId) ?? projects[0] ?? null;
@@ -254,6 +260,19 @@ export function AdminCRM() {
     setContent(data.content ?? emptyContent);
   };
 
+  const loadMedia = async () => {
+    const response = await fetch("/api/admin/media", { cache: "no-store" });
+
+    if (response.status === 401) {
+      setAuthenticated(false);
+      setMedia([]);
+      return;
+    }
+
+    const data = await response.json();
+    setMedia(data.media ?? []);
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       const response = await fetch("/api/admin/session", { cache: "no-store" });
@@ -265,6 +284,7 @@ export function AdminCRM() {
         await loadLeads();
         await loadProjects();
         await loadContent();
+        await loadMedia();
       }
     };
 
@@ -291,6 +311,7 @@ export function AdminCRM() {
     await loadLeads();
     await loadProjects();
     await loadContent();
+    await loadMedia();
   };
 
   const logout = async () => {
@@ -300,6 +321,7 @@ export function AdminCRM() {
     setActivity([]);
     setProjects([]);
     setContent(emptyContent);
+    setMedia([]);
   };
 
   const updateSelectedLead = async (patch: Partial<Pick<Lead, "status" | "managerNote" | "nextAction" | "nextActionAt" | "potentialValue" | "lostReason">>) => {
@@ -403,6 +425,56 @@ export function AdminCRM() {
     setContentSaving(false);
   };
 
+  const uploadMedia = async () => {
+    if (!mediaFile) {
+      setMediaMessage("Выберите файл для загрузки.");
+      return;
+    }
+
+    setMediaSaving(true);
+    setMediaMessage("");
+
+    const formData = new FormData();
+    formData.append("file", mediaFile);
+    formData.append("title", mediaTitle);
+    formData.append("alt", mediaAlt);
+
+    const response = await fetch("/api/admin/media", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setMedia((items) => [data.media, ...items]);
+      setMediaTitle("");
+      setMediaAlt("");
+      setMediaFile(null);
+      setMediaMessage("Картинка загружена. URL можно скопировать.");
+    } else {
+      setMediaMessage("Не удалось загрузить картинку. Проверь Supabase Storage и размер файла.");
+    }
+
+    setMediaSaving(false);
+  };
+
+  const deleteMedia = async (id: string) => {
+    const response = await fetch("/api/admin/media", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (response.ok) {
+      setMedia((items) => items.filter((item) => item.id !== id));
+    }
+  };
+
+  const copyMediaUrl = async (url: string) => {
+    await navigator.clipboard.writeText(url);
+    setMediaMessage("URL скопирован.");
+  };
+
   if (checkingSession) {
     return <main className="flex min-h-screen items-center justify-center bg-[#080706] text-[#cbc9c8]">Проверяем вход...</main>;
   }
@@ -456,6 +528,7 @@ export function AdminCRM() {
           ["leads", "Заявки"],
           ["projects", "Проекты"],
           ["content", "Тексты"],
+          ["media", "Медиа"],
         ] as const).map(([value, label]) => (
           <button
             key={value}
@@ -833,6 +906,76 @@ export function AdminCRM() {
               <p className="text-sm text-[#85786f]">Выберите проект слева или добавьте новый.</p>
             )}
           </aside>
+        </section>
+      ) : activeView === "media" ? (
+        <section className="py-5">
+          <div className="grid gap-5 lg:grid-cols-[0.72fr_1.28fr]">
+            <div className="border border-[#e7e3e0]/12 bg-[#11100f] p-5">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Media library</p>
+                <h2 className="serif mt-2 text-5xl leading-none">Картинки</h2>
+                <p className="mt-3 text-sm leading-6 text-[#a69c96]">Загружай изображения и копируй URL в обложку или галерею проекта.</p>
+              </div>
+
+              <div className="mt-6 grid gap-4">
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Файл
+                  <input
+                    className={inputClass}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    onChange={(event) => setMediaFile(event.target.files?.[0] ?? null)}
+                  />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Название
+                  <input className={inputClass} value={mediaTitle} onChange={(event) => setMediaTitle(event.target.value)} placeholder="Например: Кухня ЖК Prime Park" />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Alt-текст для SEO
+                  <input className={inputClass} value={mediaAlt} onChange={(event) => setMediaAlt(event.target.value)} placeholder="Описание изображения" />
+                </label>
+                <button className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#e7e3e0] px-4 text-sm font-semibold text-[#080706]" onClick={uploadMedia}>
+                  <Upload className="h-4 w-4" />
+                  {mediaSaving ? "Загружаю..." : "Загрузить"}
+                </button>
+                {mediaMessage ? <p className="text-sm text-[#d7c4a3]">{mediaMessage}</p> : null}
+              </div>
+            </div>
+
+            <div className="border border-[#e7e3e0]/12 bg-[#11100f]">
+              <div className="flex items-center justify-between gap-3 border-b border-[#e7e3e0]/12 p-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Uploaded</p>
+                  <h3 className="serif mt-1 text-4xl">Библиотека</h3>
+                </div>
+                <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm" onClick={loadMedia}>
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="grid max-h-[72vh] gap-px overflow-auto bg-[#e7e3e0]/10 dark-scrollbar sm:grid-cols-2 xl:grid-cols-3">
+                {media.length === 0 ? (
+                  <p className="bg-[#11100f] p-5 text-sm text-[#85786f]">Картинок пока нет.</p>
+                ) : media.map((item) => (
+                  <div key={item.id} className="bg-[#11100f] p-3">
+                    <div className="aspect-[4/3] border border-[#e7e3e0]/10 bg-cover bg-center" style={{ backgroundImage: `url(${item.url})` }} />
+                    <p className="mt-3 truncate text-sm font-semibold text-[#e7e3e0]">{item.title || item.alt || "Изображение"}</p>
+                    <p className="mt-1 truncate text-xs text-[#85786f]">{item.url}</p>
+                    <div className="mt-3 flex gap-2">
+                      <button className="inline-flex min-h-9 flex-1 items-center justify-center gap-2 border border-[#e7e3e0]/18 px-3 text-xs text-[#cbc9c8]" onClick={() => copyMediaUrl(item.url)}>
+                        <Copy className="h-3.5 w-3.5" />
+                        URL
+                      </button>
+                      <button className="inline-flex min-h-9 items-center justify-center border border-[#e7b7a3]/35 px-3 text-xs text-[#e7b7a3]" onClick={() => deleteMedia(item.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
       ) : (
         <section className="py-5">

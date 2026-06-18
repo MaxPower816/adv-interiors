@@ -22,6 +22,14 @@ export function hasSupabaseConfig() {
   return Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 }
 
+export function getSupabaseServiceRoleKey() {
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("Supabase service role key is not configured.");
+  }
+
+  return SUPABASE_SERVICE_ROLE_KEY;
+}
+
 type SupabaseRequestInit = RequestInit & {
   next?: {
     revalidate?: number;
