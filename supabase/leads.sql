@@ -43,3 +43,54 @@ create index if not exists activity_events_created_at_idx on public.activity_eve
 create index if not exists activity_events_name_idx on public.activity_events (name);
 
 alter table public.activity_events enable row level security;
+
+create table if not exists public.cms_projects (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  published boolean not null default true,
+  sort_order integer not null default 0,
+  slug text not null unique,
+  title text not null,
+  city text not null default '',
+  area text not null default '',
+  year text not null default '',
+  type text not null default '',
+  description text not null default '',
+  works jsonb not null default '[]'::jsonb,
+  cover text not null default '',
+  images jsonb not null default '[]'::jsonb,
+  layout text not null default '',
+  characteristics jsonb not null default '{}'::jsonb,
+  seo_title text,
+  seo_description text
+);
+
+create index if not exists cms_projects_published_sort_idx on public.cms_projects (published, sort_order);
+create index if not exists cms_projects_slug_idx on public.cms_projects (slug);
+
+alter table public.cms_projects enable row level security;
+
+create table if not exists public.cms_content_blocks (
+  id text primary key,
+  updated_at timestamptz not null default now(),
+  payload jsonb not null default '{}'::jsonb
+);
+
+alter table public.cms_content_blocks enable row level security;
+
+create table if not exists public.cms_media (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  title text not null default '',
+  url text not null,
+  alt text not null default '',
+  kind text not null default 'image',
+  width integer,
+  height integer,
+  size_bytes integer
+);
+
+create index if not exists cms_media_created_at_idx on public.cms_media (created_at desc);
+
+alter table public.cms_media enable row level security;

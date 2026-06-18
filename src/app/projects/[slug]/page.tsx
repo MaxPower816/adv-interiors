@@ -8,21 +8,22 @@ import { Header } from "@/components/layout/Header";
 import { ProjectGallery } from "@/components/portfolio/ProjectGallery";
 import { siteConfig } from "@/config/site";
 import { projects } from "@/content/projects";
+import { getProjectBySlug, getPublishedProjects } from "@/lib/cms";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
   return projects.map((project) => ({ slug: project.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const project = projects.find((item) => item.slug === slug);
+  const project = await getProjectBySlug(slug);
 
   if (!project) {
     return { title: "Проект" };
   }
 
-  const title = `${project.title}: дизайн интерьера ${project.type.toLowerCase()} ${project.area}`;
-  const description = `${project.description} Проект ${project.type.toLowerCase()} ${project.area}, ${project.city}: ${project.works.join(", ")}.`;
+  const title = project.seoTitle || `${project.title}: дизайн интерьера ${project.type.toLowerCase()} ${project.area}`;
+  const description = project.seoDescription || `${project.description} Проект ${project.type.toLowerCase()} ${project.area}, ${project.city}: ${project.works.join(", ")}.`;
   const url = `${siteConfig.url}/projects/${project.slug}`;
 
   return {
@@ -49,9 +50,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const project = projects.find((item) => item.slug === slug);
+  const project = await getProjectBySlug(slug);
   if (!project) notFound();
-  const nextProject = projects[(projects.indexOf(project) + 1) % projects.length];
+  const publishedProjects = await getPublishedProjects();
+  const projectIndex = publishedProjects.findIndex((item) => item.slug === project.slug);
+  const nextProject = publishedProjects[(projectIndex + 1) % publishedProjects.length] ?? publishedProjects[0] ?? project;
   const projectJsonLd = {
     "@context": "https://schema.org",
     "@type": "CreativeWork",

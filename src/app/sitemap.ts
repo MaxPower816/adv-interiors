@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "@/config/site";
-import { projects } from "@/content/projects";
+import { getPublishedProjects } from "@/lib/cms";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const projects = await getPublishedProjects();
 
   return [
     { url: siteConfig.url, lastModified: now, changeFrequency: "weekly", priority: 1 },

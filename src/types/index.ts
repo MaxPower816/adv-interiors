@@ -4,6 +4,7 @@ export type NavItem = {
 };
 
 export type Project = {
+  id?: string;
   slug: string;
   title: string;
   city: string;
@@ -16,6 +17,10 @@ export type Project = {
   images: string[];
   layout: string;
   characteristics: Record<string, string>;
+  published?: boolean;
+  sortOrder?: number;
+  seoTitle?: string;
+  seoDescription?: string;
 };
 
 export type PricePlan = {
