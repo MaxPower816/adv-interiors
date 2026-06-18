@@ -892,7 +892,7 @@ export function AdminCRM() {
                         Выбрать
                       </button>
                     </span>
-                    <input className={inputClass} value={selectedProject.cover} onChange={(event) => updateSelectedProject({ cover: event.target.value })} />
+                    <input className={`${inputClass} min-w-0`} value={selectedProject.cover} onChange={(event) => updateSelectedProject({ cover: event.target.value })} />
                   </label>
                   <label className="grid gap-2 text-sm text-[#cbc9c8]">
                     <span className="flex items-center justify-between gap-3">
@@ -901,7 +901,7 @@ export function AdminCRM() {
                         Выбрать
                       </button>
                     </span>
-                    <input className={inputClass} value={selectedProject.layout} onChange={(event) => updateSelectedProject({ layout: event.target.value })} />
+                    <input className={`${inputClass} min-w-0`} value={selectedProject.layout} onChange={(event) => updateSelectedProject({ layout: event.target.value })} />
                   </label>
                 </div>
 
@@ -964,13 +964,13 @@ export function AdminCRM() {
                         Выбрать несколько
                       </button>
                     </span>
-                    <textarea className={textareaClass} value={arrayToLines(selectedProject.images)} onChange={(event) => updateSelectedProject({ images: linesToArray(event.target.value) })} />
+                    <textarea className={`${textareaClass} whitespace-pre-wrap break-all`} value={arrayToLines(selectedProject.images)} onChange={(event) => updateSelectedProject({ images: linesToArray(event.target.value) })} />
                     {selectedProject.images.length > 0 ? (
-                      <div className="grid gap-2">
+                      <div className="grid min-w-0 gap-2">
                         {selectedProject.images.map((image, index) => (
-                          <div key={`${image}-${index}`} className="flex items-center gap-3 border border-[#e7e3e0]/10 bg-[#080706]/45 p-2">
+                          <div key={`${image}-${index}`} className="grid min-w-0 grid-cols-[28px_1fr_auto] items-center gap-3 border border-[#e7e3e0]/10 bg-[#080706]/45 p-2">
                             <span className="grid h-7 w-7 shrink-0 place-items-center bg-[#e7e3e0] text-xs font-bold text-[#080706]">{index + 1}</span>
-                            <span className="min-w-0 flex-1 truncate text-xs text-[#a69c96]">{image}</span>
+                            <span className="min-w-0 break-all text-xs leading-5 text-[#a69c96]">{image}</span>
                             <button
                               type="button"
                               className="border border-[#e7b7a3]/35 px-2 py-1 text-xs text-[#e7b7a3]"
