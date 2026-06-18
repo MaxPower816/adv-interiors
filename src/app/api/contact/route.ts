@@ -44,10 +44,11 @@ export async function POST(request: Request) {
     lead = await createLead(leadData);
   } catch (error) {
     console.error("[contact lead error]", error);
+    const details = error instanceof Error ? error.message : "Unknown database error";
     return NextResponse.json(
       {
         ok: false,
-        message: "Заявка не сохранена. Проверьте подключение базы заявок.",
+        message: `Заявка не сохранена. Ошибка базы: ${details.slice(0, 180)}`,
       },
       { status: 500 },
     );
