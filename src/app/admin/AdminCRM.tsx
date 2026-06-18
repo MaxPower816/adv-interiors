@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, LogOut, Plus, RefreshCw, Search, ShieldCheck, Trash2, Upload } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, LogOut, Plus, RefreshCw, Search, ShieldCheck, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ActivityEvent, Lead, LeadStatus, MediaItem, Project, SiteContent } from "@/types";
 
@@ -181,6 +181,7 @@ export function AdminCRM() {
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
   const [saving, setSaving] = useState(false);
   const [projectSaving, setProjectSaving] = useState(false);
+  const [projectOrderSaving, setProjectOrderSaving] = useState(false);
   const [contentSaving, setContentSaving] = useState(false);
   const [contentMessage, setContentMessage] = useState("");
   const [mediaSaving, setMediaSaving] = useState(false);
@@ -379,6 +380,24 @@ export function AdminCRM() {
     setProjectSaving(false);
   };
 
+  const saveProjectOrder = async () => {
+    setProjectOrderSaving(true);
+
+    const savedProjects = await Promise.all(
+      projects.map((project, index) => fetch("/api/admin/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...project, sortOrder: index }),
+      })),
+    );
+
+    if (savedProjects.every((response) => response.ok)) {
+      await loadProjects();
+    }
+
+    setProjectOrderSaving(false);
+  };
+
   const addProject = () => {
     const project = createEmptyProject();
     setProjects((items) => [project, ...items]);
@@ -497,6 +516,29 @@ export function AdminCRM() {
       updateSelectedProject({ [mediaPickerTarget]: item.url });
       setMediaPickerTarget(null);
     }
+  };
+
+  const moveProject = (key: string, direction: -1 | 1) => {
+    setProjects((items) => {
+      const currentIndex = items.findIndex((item) => (item.id || item.slug) === key);
+      const targetIndex = currentIndex + direction;
+      if (currentIndex < 0 || targetIndex < 0 || targetIndex >= items.length) return items;
+
+      const next = [...items];
+      [next[currentIndex], next[targetIndex]] = [next[targetIndex], next[currentIndex]];
+      return next.map((item, index) => ({ ...item, sortOrder: index }));
+    });
+  };
+
+  const moveGalleryImage = (index: number, direction: -1 | 1) => {
+    if (!selectedProject) return;
+
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= selectedProject.images.length) return;
+
+    const nextImages = [...selectedProject.images];
+    [nextImages[index], nextImages[targetIndex]] = [nextImages[targetIndex], nextImages[index]];
+    updateSelectedProject({ images: nextImages });
   };
 
   if (checkingSession) {
@@ -793,33 +835,47 @@ export function AdminCRM() {
                 <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Portfolio CMS</p>
                 <h2 className="serif mt-1 text-4xl">Проекты</h2>
               </div>
-              <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm" onClick={loadProjects}>
-                <RefreshCw className="h-4 w-4" />
-              </button>
+              <div className="flex gap-2">
+                <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm" onClick={saveProjectOrder}>
+                  {projectOrderSaving ? "Сохраняю..." : "Сохранить порядок"}
+                </button>
+                <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm" onClick={loadProjects}>
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             <div className="max-h-[72vh] overflow-auto dark-scrollbar">
               {projects.length === 0 ? (
                 <p className="p-5 text-sm text-[#85786f]">Проектов в CMS пока нет. Нажми “Проект”, чтобы добавить первый.</p>
-              ) : projects.map((project) => {
+              ) : projects.map((project, index) => {
                 const key = project.id || project.slug;
                 return (
-                  <button
+                  <div
                     key={key}
-                    className={`grid w-full gap-2 border-b border-[#e7e3e0]/10 p-4 text-left transition hover:bg-[#e7e3e0]/5 ${selectedProject && (selectedProject.id || selectedProject.slug) === key ? "bg-[#e7e3e0]/8" : ""}`}
-                    onClick={() => setSelectedProjectId(key)}
+                    className={`grid gap-3 border-b border-[#e7e3e0]/10 p-4 transition hover:bg-[#e7e3e0]/5 ${selectedProject && (selectedProject.id || selectedProject.slug) === key ? "bg-[#e7e3e0]/8" : ""}`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold">{project.title}</p>
-                        <p className="mt-1 text-sm text-[#a69c96]">{project.slug}</p>
+                    <button type="button" className="grid w-full gap-2 text-left" onClick={() => setSelectedProjectId(key)}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold">{String(index + 1).padStart(2, "0")} · {project.title}</p>
+                          <p className="mt-1 text-sm text-[#a69c96]">{project.slug}</p>
+                        </div>
+                        <span className={`shrink-0 border px-2 py-1 text-[11px] uppercase tracking-[0.12em] ${project.published ? "border-[#8da98d]/45 text-[#b5d0b5]" : "border-[#e7c891]/45 text-[#e7c891]"}`}>
+                          {project.published ? "Опубликован" : "Черновик"}
+                        </span>
                       </div>
-                      <span className={`shrink-0 border px-2 py-1 text-[11px] uppercase tracking-[0.12em] ${project.published ? "border-[#8da98d]/45 text-[#b5d0b5]" : "border-[#e7c891]/45 text-[#e7c891]"}`}>
-                        {project.published ? "Опубликован" : "Черновик"}
-                      </span>
+                      <p className="text-sm text-[#cbc9c8]">{project.type}, {project.area}, {project.city}</p>
+                    </button>
+                    <div className="flex gap-2">
+                      <button type="button" className="grid h-9 w-9 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === 0} onClick={() => moveProject(key, -1)} aria-label="Поднять проект">
+                        <ArrowUp className="h-4 w-4" />
+                      </button>
+                      <button type="button" className="grid h-9 w-9 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30" disabled={index === projects.length - 1} onClick={() => moveProject(key, 1)} aria-label="Опустить проект">
+                        <ArrowDown className="h-4 w-4" />
+                      </button>
                     </div>
-                    <p className="text-sm text-[#cbc9c8]">{project.type}, {project.area}, {project.city}</p>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -997,9 +1053,27 @@ export function AdminCRM() {
                     {selectedProject.images.length > 0 ? (
                       <div className="grid min-w-0 gap-2">
                         {selectedProject.images.map((image, index) => (
-                          <div key={`${image}-${index}`} className="grid min-w-0 grid-cols-[28px_1fr_auto] items-center gap-3 border border-[#e7e3e0]/10 bg-[#080706]/45 p-2">
+                          <div key={`${image}-${index}`} className="grid min-w-0 grid-cols-[28px_1fr_auto_auto_auto] items-center gap-2 border border-[#e7e3e0]/10 bg-[#080706]/45 p-2">
                             <span className="grid h-7 w-7 shrink-0 place-items-center bg-[#e7e3e0] text-xs font-bold text-[#080706]">{index + 1}</span>
                             <span className="min-w-0 break-all text-xs leading-5 text-[#a69c96]">{image}</span>
+                            <button
+                              type="button"
+                              className="grid h-8 w-8 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30"
+                              disabled={index === 0}
+                              onClick={() => moveGalleryImage(index, -1)}
+                              aria-label="Поднять изображение"
+                            >
+                              <ArrowUp className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              className="grid h-8 w-8 place-items-center border border-[#e7e3e0]/18 text-[#cbc9c8] disabled:opacity-30"
+                              disabled={index === selectedProject.images.length - 1}
+                              onClick={() => moveGalleryImage(index, 1)}
+                              aria-label="Опустить изображение"
+                            >
+                              <ArrowDown className="h-3.5 w-3.5" />
+                            </button>
                             <button
                               type="button"
                               className="border border-[#e7b7a3]/35 px-2 py-1 text-xs text-[#e7b7a3]"
