@@ -23,6 +23,27 @@ export type Project = {
   seoDescription?: string;
 };
 
+export type SiteStat = {
+  value: number;
+  suffix: string;
+  label: string;
+};
+
+export type SiteContent = {
+  hero: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    cta: string;
+    finalCta: string;
+  };
+  about: {
+    title: string;
+    text: string;
+    stats: SiteStat[];
+  };
+};
+
 export type PricePlan = {
   id: string;
   title: string;

@@ -14,8 +14,10 @@ import { ServicesSection } from "@/components/sections/ServicesSection";
 import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import { siteConfig } from "@/config/site";
 import { faq } from "@/content/faq";
+import { getSiteContent } from "@/lib/cms";
 
-export default function Home() {
+export default async function Home() {
+  const content = await getSiteContent();
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -46,9 +48,9 @@ export default function Home() {
     <>
       <Header />
       <main id="main">
-        <HeroSection />
+        <HeroSection hero={content.hero} />
         <PortfolioSection />
-        <AboutSection />
+        <AboutSection about={content.about} />
         <ServicesSection />
         <ProcessSection />
         <SEOTextSection />

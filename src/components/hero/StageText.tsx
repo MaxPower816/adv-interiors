@@ -4,7 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import { roomStages } from "@/config/room-stages";
 import { cn } from "@/lib/utils";
 
-export function StageText({ progress }: { progress: number }) {
+export function StageText({ progress, finalCta }: { progress: number; finalCta: string }) {
   const stage = roomStages.find((item) => progress >= item.start && progress <= item.end) ?? roomStages[roomStages.length - 1];
 
   return (
@@ -21,7 +21,7 @@ export function StageText({ progress }: { progress: number }) {
             stage.side === "right" && "ml-auto",
           )}
         >
-          Посмотреть реализованные проекты
+          {finalCta}
           <ArrowUpRight aria-hidden className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </a>
       ) : null}

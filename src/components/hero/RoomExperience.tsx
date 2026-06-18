@@ -6,8 +6,8 @@ import Lenis from "lenis";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cameraPath } from "@/config/camera-path";
-import { heroCopy } from "@/content/site-content";
 import { trackEvent } from "@/lib/utils";
+import type { SiteContent } from "@/types";
 import { MagneticButton } from "@/components/ui/MagneticButton";
 import { RoomCanvas } from "./RoomCanvas";
 import { SceneFallback } from "./SceneFallback";
@@ -27,7 +27,7 @@ function hasWebGL() {
   }
 }
 
-export function RoomExperience() {
+export function RoomExperience({ hero }: { hero: SiteContent["hero"] }) {
   const sectionRef = useRef<HTMLElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
   const scrollLockRef = useRef(false);
@@ -135,18 +135,18 @@ export function RoomExperience() {
         <div className="pointer-events-none absolute inset-0 flex items-center px-5 md:px-10">
           {progress < 0.08 ? (
             <div className="max-w-3xl">
-              <p className="mb-5 text-xs uppercase tracking-[0.3em] text-[#a69c96]">{heroCopy.eyebrow}</p>
-              <h1 className="serif whitespace-pre-line text-[clamp(3.3rem,9vw,8rem)] font-medium leading-[0.9]">{heroCopy.title}</h1>
-              <p className="mt-7 max-w-xl text-lg leading-8 text-[#cbc9c8]">{heroCopy.subtitle}</p>
+              <p className="mb-5 text-xs uppercase tracking-[0.3em] text-[#a69c96]">{hero.eyebrow}</p>
+              <h1 className="serif whitespace-pre-line text-[clamp(3.3rem,9vw,8rem)] font-medium leading-[0.9]">{hero.title}</h1>
+              <p className="mt-7 max-w-xl text-lg leading-8 text-[#cbc9c8]">{hero.subtitle}</p>
               <MagneticButton className="pointer-events-auto mt-9" onClick={() => {
                 trackEvent("hero_cta_click");
                 sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
               }}>
-                {heroCopy.cta}
+                {hero.cta}
               </MagneticButton>
             </div>
           ) : (
-            <StageText progress={progress} />
+            <StageText progress={progress} finalCta={hero.finalCta} />
           )}
         </div>
         <div className="pointer-events-none absolute bottom-7 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-xs uppercase tracking-[0.22em] text-[#cbc9c8]">

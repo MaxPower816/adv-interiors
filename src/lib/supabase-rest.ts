@@ -22,19 +22,29 @@ export function hasSupabaseConfig() {
   return Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 }
 
-export async function supabaseRequest<T>(path: string, init?: RequestInit) {
+type SupabaseRequestInit = RequestInit & {
+  next?: {
+    revalidate?: number;
+    tags?: string[];
+  };
+};
+
+export async function supabaseRequest<T>(path: string, init?: SupabaseRequestInit) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error("Supabase environment variables are not configured.");
   }
 
+  const { cache, next, ...requestInit } = init ?? {};
+
   const response = await fetch(getSupabaseRestUrl(path), {
-    ...init,
-    cache: "no-store",
+    ...requestInit,
+    cache: cache ?? "no-store",
+    next,
     headers: {
       apikey: SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
+      ...(requestInit.headers ?? {}),
     },
   });
 

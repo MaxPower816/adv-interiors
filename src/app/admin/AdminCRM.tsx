@@ -2,7 +2,7 @@
 
 import { LogOut, Plus, RefreshCw, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { ActivityEvent, Lead, LeadStatus, Project } from "@/types";
+import type { ActivityEvent, Lead, LeadStatus, Project, SiteContent } from "@/types";
 
 const statusLabels: Record<LeadStatus, string> = {
   new: "Новая",
@@ -46,6 +46,21 @@ const eventLabels: Record<string, string> = {
   contact_form_submit: "Отправил форму",
   service_open: "Открыл услугу",
   price_select: "Выбрал тариф",
+};
+
+const emptyContent: SiteContent = {
+  hero: {
+    eyebrow: "",
+    title: "",
+    subtitle: "",
+    cta: "",
+    finalCta: "",
+  },
+  about: {
+    title: "",
+    text: "",
+    stats: [],
+  },
 };
 
 function formatDate(value: string) {
@@ -123,6 +138,26 @@ function linesToCharacteristics(value: string) {
   );
 }
 
+function statsToLines(stats: SiteContent["about"]["stats"]) {
+  return stats.map((stat) => `${stat.value}|${stat.suffix}|${stat.label}`).join("\n");
+}
+
+function linesToStats(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [rawValue, suffix = "", label = ""] = line.split("|");
+      return {
+        value: Number(rawValue) || 0,
+        suffix: suffix.trim(),
+        label: label.trim(),
+      };
+    })
+    .filter((stat) => stat.label);
+}
+
 export function AdminCRM() {
   const [authenticated, setAuthenticated] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -131,13 +166,15 @@ export function AdminCRM() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [content, setContent] = useState<SiteContent>(emptyContent);
   const [selectedId, setSelectedId] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
   const [saving, setSaving] = useState(false);
   const [projectSaving, setProjectSaving] = useState(false);
-  const [activeView, setActiveView] = useState<"leads" | "projects">("leads");
+  const [contentSaving, setContentSaving] = useState(false);
+  const [activeView, setActiveView] = useState<"leads" | "projects" | "content">("leads");
 
   const selectedLead = leads.find((lead) => lead.id === selectedId) ?? leads[0] ?? null;
   const selectedProject = projects.find((project) => (project.id || project.slug) === selectedProjectId) ?? projects[0] ?? null;
@@ -203,6 +240,19 @@ export function AdminCRM() {
     setSelectedProjectId((current) => current || data.projects?.[0]?.id || data.projects?.[0]?.slug || "");
   };
 
+  const loadContent = async () => {
+    const response = await fetch("/api/admin/content", { cache: "no-store" });
+
+    if (response.status === 401) {
+      setAuthenticated(false);
+      setContent(emptyContent);
+      return;
+    }
+
+    const data = await response.json();
+    setContent(data.content ?? emptyContent);
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       const response = await fetch("/api/admin/session", { cache: "no-store" });
@@ -213,6 +263,7 @@ export function AdminCRM() {
       if (data.authenticated) {
         await loadLeads();
         await loadProjects();
+        await loadContent();
       }
     };
 
@@ -238,6 +289,7 @@ export function AdminCRM() {
     setPassword("");
     await loadLeads();
     await loadProjects();
+    await loadContent();
   };
 
   const logout = async () => {
@@ -246,6 +298,7 @@ export function AdminCRM() {
     setLeads([]);
     setActivity([]);
     setProjects([]);
+    setContent(emptyContent);
   };
 
   const updateSelectedLead = async (patch: Partial<Pick<Lead, "status" | "managerNote" | "nextAction" | "nextActionAt" | "potentialValue" | "lostReason">>) => {
@@ -324,6 +377,27 @@ export function AdminCRM() {
     }
   };
 
+  const updateContent = (patch: Partial<SiteContent>) => {
+    setContent((current) => ({ ...current, ...patch }));
+  };
+
+  const saveContent = async () => {
+    setContentSaving(true);
+
+    const response = await fetch("/api/admin/content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(content),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setContent(data.content ?? content);
+    }
+
+    setContentSaving(false);
+  };
+
   if (checkingSession) {
     return <main className="flex min-h-screen items-center justify-center bg-[#080706] text-[#cbc9c8]">Проверяем вход...</main>;
   }
@@ -376,6 +450,7 @@ export function AdminCRM() {
         {([
           ["leads", "Заявки"],
           ["projects", "Проекты"],
+          ["content", "Тексты"],
         ] as const).map(([value, label]) => (
           <button
             key={value}
@@ -608,7 +683,7 @@ export function AdminCRM() {
             )}
           </div>
         </div>
-      </section></> : (
+      </section></> : activeView === "projects" ? (
         <section className="grid gap-5 py-5 lg:grid-cols-[0.78fr_1.22fr]">
           <div className="border border-[#e7e3e0]/12 bg-[#11100f]">
             <div className="flex items-center justify-between gap-3 border-b border-[#e7e3e0]/12 p-4">
@@ -753,6 +828,76 @@ export function AdminCRM() {
               <p className="text-sm text-[#85786f]">Выберите проект слева или добавьте новый.</p>
             )}
           </aside>
+        </section>
+      ) : (
+        <section className="py-5">
+          <div className="border border-[#e7e3e0]/12 bg-[#11100f] p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#e7e3e0]/12 pb-5">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-[#85786f]">Content CMS</p>
+                <h2 className="serif mt-2 text-5xl leading-none">Тексты сайта</h2>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-[#a69c96]">Пока здесь главный экран и блок философии. После сохранения Vercel обновит публичную страницу примерно в течение минуты.</p>
+              </div>
+              <div className="flex gap-2">
+                <button className="inline-flex min-h-10 items-center gap-2 border border-[#e7e3e0]/18 px-3 text-sm text-[#cbc9c8]" onClick={loadContent}>
+                  <RefreshCw className="h-4 w-4" />
+                  Обновить
+                </button>
+                <button className="min-h-10 bg-[#e7e3e0] px-4 text-sm font-semibold text-[#080706]" onClick={saveContent}>
+                  {contentSaving ? "Сохраняю..." : "Сохранить тексты"}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-4">
+                <h3 className="serif text-4xl">Главный экран</h3>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Маленькая строка сверху
+                  <input className={inputClass} value={content.hero.eyebrow} onChange={(event) => updateContent({ hero: { ...content.hero, eyebrow: event.target.value } })} />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Заголовок
+                  <textarea className={textareaClass} value={content.hero.title} onChange={(event) => updateContent({ hero: { ...content.hero, title: event.target.value } })} />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Подзаголовок
+                  <textarea className={textareaClass} value={content.hero.subtitle} onChange={(event) => updateContent({ hero: { ...content.hero, subtitle: event.target.value } })} />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Текст кнопки
+                  <input className={inputClass} value={content.hero.cta} onChange={(event) => updateContent({ hero: { ...content.hero, cta: event.target.value } })} />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Кнопка в финале скролла
+                  <input className={inputClass} value={content.hero.finalCta} onChange={(event) => updateContent({ hero: { ...content.hero, finalCta: event.target.value } })} />
+                </label>
+              </div>
+
+              <div className="grid gap-4">
+                <h3 className="serif text-4xl">О студии</h3>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Заголовок
+                  <textarea className={textareaClass} value={content.about.title} onChange={(event) => updateContent({ about: { ...content.about, title: event.target.value } })} />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Текст
+                  <textarea className={textareaClass} value={content.about.text} onChange={(event) => updateContent({ about: { ...content.about, text: event.target.value } })} />
+                </label>
+                <label className="grid gap-2 text-sm text-[#cbc9c8]">
+                  Цифры, формат: число|суффикс|подпись
+                  <textarea
+                    className={textareaClass}
+                    value={statsToLines(content.about.stats)}
+                    onChange={(event) => updateContent({ about: { ...content.about, stats: linesToStats(event.target.value) } })}
+                  />
+                </label>
+                <div className="border border-[#e7e3e0]/10 bg-[#080706]/50 p-4 text-sm leading-6 text-[#a69c96]">
+                  Пример строки для цифр: <span className="text-[#e7e3e0]">8|+|лет в дизайне</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
       )}
     </main>
